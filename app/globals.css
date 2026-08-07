@@ -4,16 +4,21 @@ html,
 body {
   width: 100%;
   min-width: 320px;
-  height: 100%;
+  min-height: 100%;
   margin: 0;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(215, 173, 85, 0.12), transparent 32%),
-    linear-gradient(145deg, #071f19, #03110e);
+  background: #f4f2eb;
 }
 
 body {
-  color: #f7f5ef;
+  color: #10271f;
+  overflow-x: hidden;
+}
+
+.mobile-route {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, rgba(215, 173, 85, 0.12), transparent 32%), linear-gradient(145deg, #071f19, #03110e);
 }
 
 .hatam-loading {

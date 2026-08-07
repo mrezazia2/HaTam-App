@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./mobile-runtime.css";
 import "./prototype.css";
+import "./site.css";
 
 export const metadata: Metadata = {
-  title: "املاک حاتم",
-  description: "جست‌وجو و بررسی فایل‌های تاییدشده املاک حاتم",
+  title: "املاک حاتم | انتخاب مطمئن برای خرید و اجاره ملک",
+  description: "فایل‌های تاییدشده، مشاوره اختصاصی و جست‌وجوی هوشمند ملک در تهران با املاک حاتم.",
   other: {
     "codex-preview": "development",
   },
