@@ -57,8 +57,8 @@ export default function PanelShell({ kind }: { kind: PanelKind }) {
           <article className="panel-card wide files-card">
             <div className="panel-card-title"><div><h2>آخرین فایل‌ها</h2><span>فایل‌های تازه ثبت‌شده در سامانه</span></div><button>مشاهده همه</button></div>
             <div className="panel-file-list">
-              <div><img src="/assets/hatam/penthouse.png" alt="" /><span><strong>پنت‌هاوس ۲۱۰ متری</strong><small>فرمانیه · ۳۲ میلیارد</small></span><em>تایید شده</em></div>
-              <div><img src="/assets/hatam/bright-apartment.png" alt="" /><span><strong>آپارتمان ۱۴۰ متری</strong><small>زعفرانیه · ۱۸.۸ میلیارد</small></span><em>در انتظار بررسی</em></div>
+              <div><img src="/assets/hatam/penthouse.webp" alt="" /><span><strong>پنت‌هاوس ۲۱۰ متری</strong><small>فرمانیه · ۳۲ میلیارد</small></span><em>تایید شده</em></div>
+              <div><img src="/assets/hatam/bright-apartment.webp" alt="" /><span><strong>آپارتمان ۱۴۰ متری</strong><small>زعفرانیه · ۱۸.۸ میلیارد</small></span><em>در انتظار بررسی</em></div>
             </div>
           </article>
         </div>

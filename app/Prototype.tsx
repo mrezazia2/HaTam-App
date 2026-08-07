@@ -45,7 +45,7 @@ const properties: Property[] = [
     meterPrice: "متری ۱۰۰ میلیون تومان",
     size: 125,
     beds: 2,
-    image: "/assets/hatam/luxury-living.png",
+    image: "/assets/hatam/luxury-living.webp",
     badge: "ویژه",
   },
   {
@@ -56,7 +56,7 @@ const properties: Property[] = [
     meterPrice: "متری ۱۳۴ میلیون تومان",
     size: 140,
     beds: 3,
-    image: "/assets/hatam/bright-apartment.png",
+    image: "/assets/hatam/bright-apartment.webp",
     badge: "فوری",
   },
   {
@@ -67,7 +67,7 @@ const properties: Property[] = [
     meterPrice: "متری ۱۵۲ میلیون تومان",
     size: 210,
     beds: 4,
-    image: "/assets/hatam/penthouse.png",
+    image: "/assets/hatam/penthouse.webp",
     badge: "VIP",
   },
 ];
@@ -231,7 +231,7 @@ function SearchScreen({ onOpen, favorites, onFavorite, filterOpen, setFilterOpen
           </div>
           {mode === "map" ? (
             <div className="map-view" aria-label="نقشه فایل‌های املاک">
-              <img src="/assets/hatam/north-tehran-map.png" alt="نقشه شمال تهران" />
+              <img src="/assets/hatam/north-tehran-map.webp" alt="نقشه شمال تهران" />
               {filtered.map((property, index) => (
                 <button key={property.id} className={`map-price marker-${index + 1}`} onClick={() => onOpen(property)}>{property.price.replace(" تومان", "")}</button>
               ))}
@@ -296,7 +296,7 @@ function DetailScreen({ property, favorite, onFavorite, onBack }: {
             <p>واحدی خوش‌نقشه و نورگیر با متریال درجه‌یک، پنجره‌های سرتاسری، لابی مجلل و دسترسی سریع به امکانات محله.</p>
           </section>
           <section className="advisor-card">
-            <img className="advisor-avatar" src="/assets/hatam/advisor.png" alt="حاتم امیری، مشاور املاک" />
+            <img className="advisor-avatar" src="/assets/hatam/advisor.webp" alt="حاتم امیری، مشاور املاک" />
             <div><span>مشاور اختصاصی شما</span><strong>حاتم امیری</strong></div>
             <span className="online-dot" />
           </section>

@@ -14,7 +14,7 @@ const featured = [
     location: "فرمانیه، بلوار اندرزگو",
     price: "۳۲ میلیارد تومان",
     details: "۲۱۰ متر · ۴ خواب",
-    image: "/assets/hatam/penthouse.png",
+    image: "/assets/hatam/penthouse.webp",
     badge: "VIP",
   },
   {
@@ -22,7 +22,7 @@ const featured = [
     location: "زعفرانیه، خیابان آصف",
     price: "۱۸.۸ میلیارد تومان",
     details: "۱۴۰ متر · ۳ خواب",
-    image: "/assets/hatam/bright-apartment.png",
+    image: "/assets/hatam/bright-apartment.webp",
     badge: "فوری",
   },
   {
@@ -30,7 +30,7 @@ const featured = [
     location: "نیاوران، خیابان پاسداران",
     price: "۱۲.۵ میلیارد تومان",
     details: "۱۲۵ متر · ۲ خواب",
-    image: "/assets/hatam/luxury-living.png",
+    image: "/assets/hatam/luxury-living.webp",
     badge: "ویژه",
   },
 ];
@@ -136,7 +136,7 @@ export default function PublicHome() {
           <Link className="outline-action" href="/app">شروع جست‌وجوی هوشمند <ArrowLeftIcon /></Link>
         </div>
         <div className="service-visual">
-          <img src="/assets/hatam/bright-apartment.png" alt="فضای داخلی یک ملک منتخب حاتم" />
+          <img src="/assets/hatam/bright-apartment.webp" alt="فضای داخلی یک ملک منتخب حاتم" />
           <div className="service-note"><strong>انتخاب دقیق‌تر</strong><span>براساس بودجه، محله و سبک زندگی شما</span></div>
         </div>
       </section>

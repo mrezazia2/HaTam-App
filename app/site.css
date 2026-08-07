@@ -28,7 +28,7 @@
 .gold-action:hover { transform: translateY(-2px); background: #e5c370; }
 
 .hero-section { position: relative; min-height: 760px; display: grid; align-items: center; overflow: hidden; background: var(--site-deep); color: #fff; }
-.hero-image { position: absolute; inset: 0; background: url('/assets/hatam/luxury-living.png') center 58%/cover no-repeat; transform: scale(1.03); }
+.hero-image { position: absolute; inset: 0; background: url('/assets/hatam/luxury-living.webp') center 58%/cover no-repeat; transform: scale(1.03); }
 .hero-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,20,16,.38), rgba(3,28,22,.88) 63%, rgba(3,28,22,.97)), linear-gradient(0deg, rgba(3,20,16,.78), transparent 58%); }
 .hero-content { position: relative; z-index: 2; width: min(1380px, calc(100% - 64px)); margin: 68px auto 0; }
 .hero-kicker, .section-kicker { display: block; margin-bottom: 15px; color: var(--site-gold); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
