@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+html,
+body {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+  background: #f4f2eb;
+}
+
+body {
+  color: #10271f;
+  overflow-x: hidden;
+}
+
+.mobile-route {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, rgba(215, 173, 85, 0.12), transparent 32%), linear-gradient(145deg, #071f19, #03110e);
+}
+
+.hatam-loading {
+  width: 44px;
+  height: 44px;
+  margin: calc(50vh - 22px) auto 0;
+  border: 2px solid rgba(215, 173, 85, 0.22);
+  border-top-color: #d7ad55;
+  border-radius: 50%;
+  animation: hatam-spin 700ms linear infinite;
+}
+
+@keyframes hatam-spin {
+  to { transform: rotate(360deg); }
+}
+
+* {
+  box-sizing: border-box;
+}
