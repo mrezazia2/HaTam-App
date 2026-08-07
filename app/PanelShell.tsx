@@ -8,6 +8,7 @@ import {
   PersonIcon,
   PlusIcon,
 } from "@radix-ui/react-icons";
+import { BrandLogo } from "./BrandTheme";
 
 type PanelKind = "consultant" | "agency";
 
@@ -16,7 +17,7 @@ export default function PanelShell({ kind }: { kind: PanelKind }) {
   return (
     <main className="panel-shell" dir="rtl">
       <aside className="panel-sidebar">
-        <Link href="/"><img src="/assets/hatam/logo.png" alt="حاتم" /></Link>
+        <Link href="/"><BrandLogo compact /></Link>
         <span className="panel-type">{agency ? "پنل آژانس املاک" : "پنل مشاور املاک"}</span>
         <nav>
           <button className="active"><DashboardIcon /> داشبورد</button>

@@ -21,6 +21,7 @@ import {
   Share2Icon,
 } from "@radix-ui/react-icons";
 import { BottomSheet, Carousel, KeyboardInput, MobileScroll, useKeyboard } from "./mobile";
+import { BrandLogo, BrandSlogan } from "./BrandTheme";
 
 type Screen = "home" | "search" | "favorites" | "profile" | "detail";
 
@@ -85,7 +86,7 @@ function resetDeviceScroll() {
 }
 
 function Brand() {
-  return <img className="brand-logo" src="/assets/hatam/logo.png" alt="املاک حاتم" />;
+  return <BrandLogo className="app-brand" />;
 }
 
 function PropertyCard({ property, onOpen, favorite, onFavorite }: {
@@ -136,6 +137,8 @@ function HomeScreen({ onOpen, favorites, onFavorite, goSearch }: {
           </div>
           <button className="profile-chip" aria-label="پروفایل مشاور"><PersonIcon /></button>
         </section>
+
+        <p className="app-slogan"><BrandSlogan /></p>
 
         <button className="search-shell" onClick={goSearch} aria-label="جست‌وجوی ملک">
           <MagnifyingGlassIcon />
