@@ -3,6 +3,7 @@ import "./globals.css";
 import "./mobile-runtime.css";
 import "./prototype.css";
 import "./site.css";
+import "./experience.css";
 
 export const metadata: Metadata = {
   title: "املاک حاتم | انتخاب مطمئن برای خرید و اجاره ملک",
