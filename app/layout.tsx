@@ -1,11 +1,38 @@
 import type { Metadata } from "next";
+import { presentationMode } from "./auth/presentation";
 import "./globals.css";
 import "./mobile-runtime.css";
 import "./prototype.css";
 import "./site.css";
 import "./experience.css";
+import "./admin/admin.css";
+import "./admin/operations.css";
+import "./admin/approvals.css";
+import "./admin/workspace.css";
+import "./admin/urgent-sales.css";
+import "./admin/integrations.css";
+import "./admin/sms-settings.css";
+import "./components/map-location-picker.css";
+import "./components/map-modal-fixes.css";
+import "./components/favorites.css";
+import "./components/saved-searches.css";
+import "./admin/shortcut.css";
+import "./portals/portals.css";
+import "./portals/wallet.css";
+import "./auth/auth.css";
+import "./property/property.css";
+import "./role-access.css";
+import "./content/content.css";
+import "./theme/theme.css";
+import "./communications/communications-polish.css";
+import { BrandProvider } from "./brand/BrandProvider";
+import { ThemeProvider } from "./theme/ThemeProvider";
+import PasswordFallback from "./auth/PasswordFallback";
+import PasswordSetupPrompt from "./auth/PasswordSetupPrompt";
+import "./auth/password-setup.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hatamestate.ir"),
   title: "املاک حاتم | انتخاب مطمئن برای خرید و اجاره ملک",
   description: "فایل‌های تاییدشده، مشاوره اختصاصی و جست‌وجوی هوشمند ملک در تهران با املاک حاتم.",
   other: {
@@ -14,6 +41,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
+  },
+  openGraph: {
+    title: "املاک حاتم",
+    description: "خرید، فروش و سرمایه‌گذاری مطمئن در املاک شرق تهران.",
+    type: "website",
+    locale: "fa_IR",
+    siteName: "املاک حاتم",
   },
 };
 
@@ -24,7 +58,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl">
-      <body>{children}</body>
+      <body><ThemeProvider><BrandProvider>{presentationMode() && <nav aria-label="نسخه نمایشی" style={{padding:12,background:"#073126",color:"white",display:"flex",gap:16,flexWrap:"wrap",position:"relative",zIndex:10000}}><span>نسخه نمایشی · فقط مشاهده</span>{[["/","سایت"],["/app","اپ"],["/panel","مشتری"],["/consultant","مشاور"],["/agency","آژانس"],["/admin","ادمین"]].map(([href,label])=><a key={href} href={href} style={{color:"#f4dfaa"}}>{label}</a>)}</nav>}{children}{!presentationMode() && <><PasswordFallback/><PasswordSetupPrompt/></>}</BrandProvider></ThemeProvider></body>
     </html>
   );
 }

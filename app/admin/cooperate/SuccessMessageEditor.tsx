@@ -1,0 +1,6 @@
+"use client";
+import {useEffect,useState} from "react";
+import {CheckCircledIcon} from "@radix-ui/react-icons";
+import {defaultCooperateConfig,type CooperateConfig} from "../../cooperate/config";
+const fallback="متشکرم، کارشناسان ما در سریع‌ترین زمان با شما تماس خواهند گرفت و تایم مصاحبه را به شما اعلام می‌کنند.";
+export default function SuccessMessageEditor(){const [config,setConfig]=useState<CooperateConfig>(defaultCooperateConfig),[message,setMessage]=useState(fallback),[notice,setNotice]=useState("");useEffect(()=>{fetch("/api/admin/cooperate").then(r=>r.json()).then(x=>{if(x.config){setConfig(x.config);setMessage(x.config.successMessage||fallback)}})},[]);const save=async()=>{const r=await fetch("/api/admin/cooperate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...config,successMessage:message})});setNotice(r.ok?"پیام موفقیت ذخیره شد.":"ذخیره انجام نشد.")};return <section className="success-message-admin"><header><div><h2>پیام موفقیت فرم</h2><p>این پیام همراه آیکن تأیید بعد از ثبت معتبر نمایش داده می‌شود.</p></div><CheckCircledIcon/></header><textarea value={message} onChange={e=>setMessage(e.target.value)}/><button onClick={save}>ذخیره پیام موفقیت</button>{notice&&<small>{notice}</small>}</section>}

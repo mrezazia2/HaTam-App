@@ -1,0 +1,8 @@
+import {and,eq} from "drizzle-orm";
+import {getDb} from "../../../../db";
+import {paymentIntents} from "../../../../db/schema";
+import {getRequestAccount} from "../../_lib/authorization";
+import {writeAudit} from "../../_lib/audit";
+import {createGatewayPayment} from "../../_lib/payment-gateway";
+
+export async function POST(request:Request){const account=await getRequestAccount(request);if(!account||account.status!=="active")return Response.json({ok:false,error:"AUTH_REQUIRED"},{status:401});const body=await request.json() as {intentId?:string},db=getDb(),intent=(await db.select().from(paymentIntents).where(and(eq(paymentIntents.id,String(body.intentId||"")),eq(paymentIntents.accountId,account.id))).limit(1))[0];if(!intent)return Response.json({ok:false,error:"PAYMENT_NOT_FOUND"},{status:404});if(intent.status==="paid")return Response.json({ok:true,status:"paid"});if(intent.status!=="created")return Response.json({ok:false,error:"PAYMENT_ALREADY_STARTED"},{status:409});try{const result=await createGatewayPayment(intent,new URL(request.url).origin),now=new Date();await db.update(paymentIntents).set({provider:result.provider,authority:result.authority,status:"redirected",updatedAt:now}).where(eq(paymentIntents.id,intent.id));await writeAudit(db,account,"payment.redirected","payment_intent",intent.id,"کاربر به درگاه پرداخت هدایت شد.",{provider:result.provider,amount:intent.amount,purpose:intent.purpose});return Response.json({ok:true,status:"redirected",redirectUrl:result.redirectUrl})}catch(error){await writeAudit(db,account,"payment.request_failed","payment_intent",intent.id,"ساخت درخواست درگاه ناموفق بود.",{error:error instanceof Error?error.message:"UNKNOWN"});return Response.json({ok:false,error:"GATEWAY_REQUEST_FAILED"},{status:502})}}

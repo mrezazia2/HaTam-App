@@ -1,0 +1,10 @@
+import {eq} from "drizzle-orm";
+import {getDb} from "../../../../db";
+import {appConfigurations} from "../../../../db/schema";
+import {forbidden,requireAdmin} from "../../_lib/authorization";
+import {writeAudit} from "../../_lib/audit";
+import {defaultContactConfig,type ContactConfig,type ContactLink} from "../../../contact/config";
+export const dynamic="force-dynamic";
+const cleanLinks=(items:unknown):ContactLink[]=>Array.isArray(items)?items.slice(0,12).map((item,index)=>{const row=item as Partial<ContactLink>;return{id:String(row.id||`link-${index}`),label:String(row.label||"").trim(),url:String(row.url||"").trim(),enabled:row.enabled!==false}}).filter(x=>x.label):[];
+export async function GET(request:Request){if(!await requireAdmin(request))return forbidden();const row=(await getDb().select().from(appConfigurations).where(eq(appConfigurations.id,"contact-page")).limit(1))[0];return Response.json({ok:true,config:row?.value||defaultContactConfig})}
+export async function POST(request:Request){const admin=await requireAdmin(request);if(!admin)return forbidden();const value=await request.json() as Partial<ContactConfig>,config:ContactConfig={title:String(value.title||defaultContactConfig.title).trim(),intro:String(value.intro||"").trim(),addressLabel:String(value.addressLabel||"آدرس دفتر").trim(),address:String(value.address||"").trim(),phones:Array.isArray(value.phones)?value.phones.map(String).map(x=>x.trim()).filter(Boolean).slice(0,8):[],maps:cleanLinks(value.maps),socials:cleanLinks(value.socials)};if(!config.title||!config.address)return Response.json({ok:false,message:"عنوان و آدرس الزامی است."},{status:400});const db=getDb(),now=new Date();await db.insert(appConfigurations).values({id:"contact-page",value:config,createdAt:now,updatedAt:now}).onConflictDoUpdate({target:appConfigurations.id,set:{value:config,updatedAt:now}});await writeAudit(db,admin,"contact_page.update","app_configuration","contact-page","صفحه ارتباط با ما به‌روزرسانی شد.",{phones:config.phones.length,maps:config.maps.length,socials:config.socials.length});return Response.json({ok:true,config})}

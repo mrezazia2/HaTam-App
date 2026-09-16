@@ -1,0 +1,62 @@
+.consultant-directory-results.list,
+.consultant-directory-results.list article,
+.consultant-directory-results.list .consultant-info {
+  min-width: 0;
+}
+
+.consultant-directory-results.list article {
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: start;
+}
+
+.consultant-directory-results.list .consultant-info h2,
+.consultant-directory-results.list .consultant-info p,
+.consultant-directory-results.list .consultant-info small {
+  overflow-wrap: anywhere;
+}
+
+.consultant-directory-results.list footer {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.consultant-directory-results.list footer button {
+  min-width: 0;
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+
+@media (min-width: 760px) {
+  .consultant-directory-results.list article {
+    grid-template-columns: 72px minmax(0, 1fr) minmax(220px, 280px);
+    align-items: center;
+  }
+
+  .consultant-directory-results.list footer {
+    grid-column: 3;
+    width: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .consultant-directory-results.list article {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .consultant-directory-results.list .consultant-info > div {
+    gap: 6px;
+  }
+
+  .consultant-directory-results.list footer {
+    grid-column: 1 / -1;
+    gap: 6px;
+  }
+
+  .consultant-directory-results.list footer button {
+    font-size: 11px;
+  }
+}

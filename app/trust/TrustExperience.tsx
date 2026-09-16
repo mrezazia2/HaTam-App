@@ -1,0 +1,17 @@
+"use client";
+import Link from "next/link";
+import {useEffect,useRef,useState} from "react";
+
+type Video={id:string;title:string;url:string};
+export default function TrustExperience(){
+ const [videos,setVideos]=useState<Video[]>([]),[active,setActive]=useState(0);const rail=useRef<HTMLDivElement>(null);
+ useEffect(()=>{fetch("/api/trust-videos",{cache:"no-store"}).then(r=>r.json()).then(d=>setVideos(d.items||[])).catch(()=>setVideos([]))},[]);
+ const move=(next:number)=>{if(!videos.length)return;const index=(next+videos.length)%videos.length;setActive(index);rail.current?.children[index]?.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"})};
+ return <main className="trust-page" dir="rtl"><section className="trust-shell">
+  <header><Link href="/app" aria-label="بازگشت به اپ">‹</Link><div><span>املاک حاتم</span><h1>اعتماد شما</h1></div><i>♥</i></header>
+  <section className="trust-testimonials"><p>گوشه‌ی کوچکی از لطف و محبت شما:</p>
+   {videos.length?<><div className="trust-video-rail" ref={rail}>{videos.map((video,index)=><article key={video.id} className={active===index?"active":""}><video controls playsInline preload="metadata" src={video.url}/><strong>{video.title}</strong></article>)}</div><div className="trust-slider-controls"><button onClick={()=>move(active+1)} aria-label="ویدیوی بعدی">‹</button><span>{videos.map((video,index)=><button key={video.id} className={active===index?"active":""} onClick={()=>move(index)} aria-label={`نمایش ویدیوی ${index+1}`}/>)}</span><button onClick={()=>move(active-1)} aria-label="ویدیوی قبلی">›</button></div></>:<div className="trust-empty"><b>♥</b><span>ویدیوهای رضایت مشتریان به‌زودی در این بخش قرار می‌گیرند.</span></div>}
+  </section>
+  <section className="trust-invite"><p>اگر در شرق تهران قصد خرید و یا فروش واحد داری، درخواستت رو ثبت کن :) کارشناسان ما خیلی سریع با شما تماس می‌گیرن:</p><div><Link className="sell" href="/app?screen=urgent&source=trust">می‌خوام ملکم رو بفروشم <span>←</span></Link><Link href="/app?screen=filter&mode=manual">می‌خوام ملک بخرم <span>←</span></Link></div></section>
+ </section></main>
+}

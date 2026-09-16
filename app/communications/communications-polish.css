@@ -1,0 +1,90 @@
+/* Shared icon geometry: remove inline SVG baselines and keep every glyph optically centered. */
+:is(.communications-launchers,.portal-header-actions,.header-actions,.app-shared-header,.ops-header-actions) button{
+  line-height:1;
+}
+:is(.communications-launchers,.portal-bell,.header-actions,.app-shared-header,.ops-alert) button,
+.communications-launchers button,
+.portal-bell,
+.ops-alert{
+  align-items:center;
+  justify-content:center;
+}
+:is(.communications-launchers button,.portal-bell,.header-actions button,.app-shared-header button,.ops-alert) svg{
+  display:block;
+  width:20px;
+  height:20px;
+  margin:auto;
+  flex:0 0 20px;
+}
+.communications-launchers button{
+  display:grid;
+  place-items:center;
+  padding:0;
+  overflow:visible;
+}
+.communications-panel>header>button{
+  width:40px;
+  height:40px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border-radius:10px;
+}
+.communications-panel>header>button svg{display:block;width:19px;height:19px;margin:auto}
+
+/* A comfortable chat composer for mouse, touch and Persian text. */
+.chat-shell footer{
+  min-height:76px;
+  padding:11px 12px;
+  align-items:center;
+}
+.chat-shell footer textarea{
+  flex:1;
+  min-width:0;
+  height:52px;
+  min-height:52px;
+  max-height:112px;
+  padding:14px 15px;
+  resize:none;
+  overflow-y:auto;
+  border:1px solid rgba(215,174,88,.24);
+  border-radius:12px;
+  outline:0;
+  color:var(--theme-text,#fff);
+  background:var(--theme-surface-2,#041d17);
+  font:inherit;
+  font-size:14px;
+  line-height:1.65;
+}
+.chat-shell footer textarea:focus-visible{
+  border-color:rgba(215,174,88,.72);
+  box-shadow:0 0 0 3px rgba(215,174,88,.12);
+}
+.chat-shell footer textarea::placeholder{color:var(--theme-muted,#8fa39a)}
+.chat-shell footer>button{
+  width:52px;
+  height:52px;
+  flex:0 0 52px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border-radius:12px;
+}
+.chat-shell footer>button svg{display:block;width:20px;height:20px;margin:auto}
+
+html[data-theme="light"] .communications-panel{
+  color:#17372c;
+  border-color:#ddd4bd;
+  background:#fffdf8;
+}
+html[data-theme="light"] :is(.communications-panel>header,.chat-shell aside,.chat-context,.chat-shell footer){border-color:#e1dac9}
+html[data-theme="light"] .chat-shell footer textarea{color:#17372c;border-color:#d9d0ba;background:#f7f3e9}
+html[data-theme="light"] .chat-shell aside button{color:#294c40}
+html[data-theme="light"] .communications-panel>header>button{color:#72561d;background:#f5edda}
+
+@media(max-width:650px){
+  .communications-launchers button{width:48px;height:48px}
+  .chat-shell footer{min-height:72px;padding:9px}
+  .chat-shell footer textarea{height:50px;min-height:50px;padding:13px 12px;font-size:16px}
+  .chat-shell footer>button{width:50px;height:50px;flex-basis:50px}
+}

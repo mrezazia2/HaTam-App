@@ -16,7 +16,7 @@ export default function PanelShell({ kind }: { kind: PanelKind }) {
   return (
     <main className="panel-shell" dir="rtl">
       <aside className="panel-sidebar">
-        <Link href="/"><img src="/assets/hatam/logo.png" alt="حاتم" /></Link>
+        <Link href="/"><img src="/assets/hatam/hatam-logo-transparent-gold.png" alt="حاتم" /></Link>
         <span className="panel-type">{agency ? "پنل آژانس املاک" : "پنل مشاور املاک"}</span>
         <nav>
           <button className="active"><DashboardIcon /> داشبورد</button>

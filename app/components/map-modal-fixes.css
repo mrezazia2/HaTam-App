@@ -1,0 +1,1 @@
+.portal-modal>section,.entity-modal>form{max-height:calc(100vh - 36px);overflow-y:auto}.portal-modal>section{width:min(610px,100%)}

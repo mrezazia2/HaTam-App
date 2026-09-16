@@ -1,0 +1,8 @@
+import {and,eq,gt} from "drizzle-orm";
+import {getDb} from "../../../db";
+import {authSecurityEvents} from "../../../db/schema";
+import {hashValue} from "./auth";
+
+export async function authFingerprint(request:Request,identifier:string){const rawIp=request.headers.get("cf-connecting-ip")||request.headers.get("x-real-ip")||request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()||"unknown";return{identifierHash:await hashValue(`auth-id:${identifier}`),ipHash:await hashValue(`auth-ip:${rawIp}`)}}
+export async function authRateLimited(request:Request,identifier:string,action:"otp_request"|"otp_verify"|"password_login",windowMs:number,identifierLimit:number,ipLimit:number){const db=getDb(),fingerprint=await authFingerprint(request,identifier),since=new Date(Date.now()-windowMs),byIdentifier=await db.select({id:authSecurityEvents.id}).from(authSecurityEvents).where(and(eq(authSecurityEvents.action,action),eq(authSecurityEvents.identifierHash,fingerprint.identifierHash),gt(authSecurityEvents.createdAt,since))).limit(identifierLimit),byIp=await db.select({id:authSecurityEvents.id}).from(authSecurityEvents).where(and(eq(authSecurityEvents.action,action),eq(authSecurityEvents.ipHash,fingerprint.ipHash),gt(authSecurityEvents.createdAt,since))).limit(ipLimit);return{limited:byIdentifier.length>=identifierLimit||byIp.length>=ipLimit,...fingerprint}}
+export async function recordAuthEvent(action:"otp_request"|"otp_verify"|"password_login",fingerprint:{identifierHash:string;ipHash:string},success:boolean){await getDb().insert(authSecurityEvents).values({id:`ASE-${crypto.randomUUID()}`,action,...fingerprint,success,createdAt:new Date()})}

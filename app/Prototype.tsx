@@ -19,10 +19,47 @@ import {
   MixerHorizontalIcon,
   PersonIcon,
   Share2Icon,
+  MoonIcon,
+  SunIcon,
+  CheckCircledIcon,
+  Cross2Icon,
+  EnvelopeClosedIcon,
+  HamburgerMenuIcon,
+  PlusCircledIcon,
+  RocketIcon,
+  PaperPlaneIcon,
+  SpeakerLoudIcon,
+  StarIcon,
+  GlobeIcon,
+  CameraIcon,
+  ExternalLinkIcon,
+  MobileIcon,
+  LockClosedIcon,
 } from "@radix-ui/react-icons";
 import { BottomSheet, Carousel, KeyboardInput, MobileScroll, useKeyboard } from "./mobile";
+import { useBrand } from "./brand/BrandProvider";
+import { defaultFilterConfig, fetchFilterConfig, readFilterConfig, type FilterConfig } from "./mobile/filter-config";
+import { createUrgentSale } from "./mobile/urgent-sale-store";
+import { defaultAppMenuItems, type AppMenuItem } from "./mobile/app-menu-config";
+import { useTheme } from "./theme/ThemeProvider";
+import {defaultContactConfig,type ContactConfig} from "./contact/config";
+import "./contact/contact.css";
+import "./contact/contact-fix.css";
+import "./shared-app-header.css";
+import "./shared-app-header-fix.css";
+import "./app-login.css";
+import "./cooperate.css";
+import "./cooperate-form.css";
+import "./cooperate-adjustments.css";
+import "./cooperate-row-fix.css";
+import "./cooperate-button-fix.css";
+import {defaultCooperateConfig,type CooperateConfig,type CooperateMethod} from "./cooperate/config";
+import AppPasswordLogin from "./auth/AppPasswordLogin";
+import ConsultantDirectory from "./consultants/ConsultantDirectory";
+import "./auth/app-password-app-fix.css";
 
-type Screen = "home" | "search" | "favorites" | "profile" | "detail";
+type Screen = "entry" | "home" | "filter" | "urgent" | "submit-choice" | "consultant-submit" | "search" | "favorites" | "profile" | "detail" | "ai-chat" | "contact" | "cooperate" | "cooperate-form" | "consultants" | "login";
+type FilterMode = "manual" | "quick";
 
 type Property = {
   id: number;
@@ -35,6 +72,8 @@ type Property = {
   image: string;
   badge: string;
 };
+
+type ArchiveSort = "newest" | "oldest" | "featured" | "expensive" | "affordable";
 
 const properties: Property[] = [
   {
@@ -85,7 +124,14 @@ function resetDeviceScroll() {
 }
 
 function Brand() {
-  return <img className="brand-logo" src="/assets/hatam/logo.png" alt="املاک حاتم" />;
+  const { settings } = useBrand();
+  return <img className="brand-logo" src={settings.logoUrl} alt={settings.brandName} />;
+}
+
+function EntryScreen({continueAsGuest,openLogin}:{continueAsGuest:()=>void;openLogin:(role:"user"|"consultant"|"agency",mode:"login"|"register")=>void}){
+  const {settings}=useBrand();
+  const roles=[{key:"user",title:"خریدار و فروشنده",meta:"کاربر معمولی",Icon:PersonIcon},{key:"consultant",title:"مشاور املاک",meta:"پنل حرفه‌ای",Icon:IdCardIcon},{key:"agency",title:"آژانس املاک",meta:"حساب سازمانی",Icon:HomeIcon}];
+  return <main className="app-entry" dir="rtl"><div className="app-entry-shade"/><div className="app-entry-content"><img src={settings.logoUrl} alt={settings.brandName}/><span>به حاتم خوش آمدید</span><h1>{settings.slogan}</h1><p>نوع حساب خود را برای ورود یا ثبت‌نام انتخاب کنید.</p><div className="app-role-list">{roles.map(({key,title,meta,Icon})=><article key={key}><Icon/><div><strong>{title}</strong><small>{meta}</small></div><button onClick={()=>openLogin(key as "user"|"consultant"|"agency","login")}>ورود</button><button onClick={()=>openLogin(key as "user"|"consultant"|"agency","register")}>ثبت‌نام</button></article>)}</div><button className="app-guest" onClick={continueAsGuest}>فعلاً بدون ورود ملک‌ها را ببینم</button></div></main>
 }
 
 function PropertyCard({ property, onOpen, favorite, onFavorite }: {
@@ -114,85 +160,122 @@ function PropertyCard({ property, onOpen, favorite, onFavorite }: {
   );
 }
 
-function HomeScreen({ onOpen, favorites, onFavorite, goSearch }: {
+function HomeScreen({ onOpen, favorites, onFavorite, goSearch, openAiChat, openContact, openFilter, openUrgent, dark, toggleTheme }: {
   onOpen: (property: Property) => void;
   favorites: number[];
   onFavorite: (id: number) => void;
   goSearch: () => void;
+  openAiChat: () => void;
+  openContact: () => void;
+  openFilter: (mode: FilterMode) => void;
+  openUrgent: () => void;
+  dark: boolean;
+  toggleTheme: () => void;
 }) {
+  const [query, setQuery] = useState("");
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sort, setSort] = useState<ArchiveSort>("newest");
+  const [menuOpen,setMenuOpen]=useState(false);
+  const [menuItems,setMenuItems]=useState<AppMenuItem[]>(defaultAppMenuItems);
+  useEffect(()=>{fetch("/api/app-menu",{cache:"no-store"}).then(response=>response.ok?response.json():Promise.reject()).then(data=>setMenuItems((data.items||defaultAppMenuItems).filter((item:AppMenuItem)=>item.enabled).sort((a:AppMenuItem,b:AppMenuItem)=>a.sortOrder-b.sortOrder))).catch(()=>setMenuItems(defaultAppMenuItems))},[]);
+  useEffect(()=>{if(!menuOpen)return;const close=(event:KeyboardEvent)=>{if(event.key==="Escape")setMenuOpen(false)};window.addEventListener("keydown",close);return()=>window.removeEventListener("keydown",close)},[menuOpen]);
+  const sortLabels: Record<ArchiveSort,string> = {newest:"جدیدترین",oldest:"قدیمی‌ترین",featured:"ویژه‌ترین",expensive:"گران‌ترین",affordable:"مقرون‌به‌صرفه‌ترین"};
+  const archive = useMemo(() => {
+    const matched = properties.filter((property) => `${property.title} ${property.area}`.includes(query.trim()));
+    if (sort === "oldest") return [...matched].reverse();
+    if (sort === "featured") return [...matched].sort((a,b) => Number(b.badge === "ویژه" || b.badge === "VIP") - Number(a.badge === "ویژه" || a.badge === "VIP"));
+    if (sort === "expensive") return [...matched].sort((a,b) => b.size - a.size);
+    if (sort === "affordable") return [...matched].sort((a,b) => a.size - b.size);
+    return matched;
+  }, [query, sort]);
+  const amenities: Record<number,string[]> = {1:["پارکینگ","انباری","آسانسور","بالکن"],2:["پارکینگ","آسانسور","لابی"],3:["پارکینگ","انباری","آسانسور","تراس"]};
+  const menuIcons:Record<string,typeof HomeIcon>={home:HomeIcon,heart:HeartIcon,rocket:RocketIcon,person:PersonIcon,bookmark:BookmarkFilledIcon,consultant:IdCardIcon,contact:EnvelopeClosedIcon,plus:PlusCircledIcon,login:PersonIcon};
+  const runMenuAction=(item:AppMenuItem)=>{setMenuOpen(false);if(item.action==="home"){window.scrollTo({top:0,behavior:"smooth"});return}if(item.action==="urgent"||item.action==="register-property"){openUrgent();return}if(item.action==="featured"){setSort("featured");window.setTimeout(()=>document.querySelector(".archive-section")?.scrollIntoView({behavior:"smooth"}),100);return}if(item.action==="consultants"){window.location.href=item.target||"/register/consultant";return}if(item.action==="contact"){openContact();return}if(item.action==="login"){window.location.href=item.target||"/login/user";return}if(item.action==="url"&&item.target)window.location.href=item.target};
   return (
-    <MobileScroll key="home" className="app-screen hatam-scroll">
+    <>
+    <MobileScroll key="home" className="app-screen hatam-scroll app-home-scroll">
       <main className="home-screen" dir="rtl">
         <header className="home-header">
-          <button className="icon-button" aria-label="اعلان‌ها"><BellIcon /></button>
+          <button className="icon-button theme-button" onClick={toggleTheme} aria-label={dark?"فعال‌کردن حالت روشن":"فعال‌کردن حالت تیره"}>{dark?<SunIcon/>:<MoonIcon/>}</button>
           <Brand />
-          <button className="icon-button" aria-label="منو"><span className="menu-lines" /></button>
+          <button className="icon-button" aria-label="بازکردن منو" aria-expanded={menuOpen} onClick={()=>setMenuOpen(true)}><span className="menu-lines" /></button>
         </header>
-
-        <section className="welcome-block">
-          <div>
-            <p className="eyebrow">سلام حاتم</p>
-            <p className="location"><DrawingPinIcon /> تهران، منطقه ۱، نیاوران</p>
-          </div>
-          <button className="profile-chip" aria-label="پروفایل مشاور"><PersonIcon /></button>
+        <p className="home-tagline">خرید و فروش تخصصی املاک و مستغلات شرق تهران</p>
+        <div className="home-smart-search">
+          <button className="manual-filter" onClick={() => openFilter("manual")}><MixerHorizontalIcon/><span>فیلتر دستی</span></button>
+          <label><MagnifyingGlassIcon/><KeyboardInput value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="جست‌وجو در بین فایل‌های ملکی..." aria-label="جست‌وجوی ملک"/></label>
+          <button className="ai-filter" onClick={openAiChat}><span>AI</span><small>فیلتر هوشمند</small></button>
+        </div>
+        <section className="home-quick-actions" aria-label="دسترسی سریع">
+          {[{label:"خرید سریع",Icon:HomeIcon,action:()=>openFilter("quick")},{label:"قیمت‌گذاری",Icon:Crosshair2Icon,action:goSearch},{label:"فایل ویژه",Icon:BookmarkFilledIcon,action:()=>setSort("featured")},{label:"فروش فوری",Icon:Share2Icon,action:openUrgent}].map(({label,Icon,action})=><button key={label} onClick={action}><Icon/><span>{label}</span></button>)}
         </section>
-
-        <button className="search-shell" onClick={goSearch} aria-label="جست‌وجوی ملک">
-          <MagnifyingGlassIcon />
-          <span>جست‌وجو در محله، منطقه یا خیابان...</span>
-        </button>
-
-        <section className="category-grid" aria-label="نوع معامله">
-          {categoryItems.map(({ label, Icon }) => (
-            <button className="category-button" key={label} onClick={goSearch}>
-              <Icon />
-              <span>{label}</span>
-            </button>
-          ))}
-        </section>
-
-        <section className="section-block">
-          <div className="section-heading">
-            <h2>فایل‌های ویژه</h2>
-            <button onClick={goSearch}>مشاهده همه</button>
+        <section className="archive-section">
+          <button className="archive-sort-trigger" onClick={()=>setSortOpen(!sortOpen)}><span>مرتب‌سازی بر اساس</span><strong>{sortLabels[sort]}</strong><ChevronLeftIcon/></button>
+          {sortOpen&&<div className="archive-sort-panel" role="dialog" aria-label="مرتب‌سازی فایل‌ها">{(["newest","oldest","featured","expensive","affordable"] as ArchiveSort[]).map(value=><button className={sort===value?"selected":""} key={value} onClick={()=>{setSort(value);setSortOpen(false)}}><i/>{sortLabels[value]}</button>)}</div>}
+          <div className="archive-list">
+            {archive.map((property,index)=><article className="archive-property" key={property.id}>
+              <button className="property-hit" onClick={()=>onOpen(property)} aria-label={`مشاهده ${property.title}`}/>
+              <img src={property.image} alt={property.title}/>
+              <div className="archive-copy"><h2>{property.title}</h2><p><DrawingPinIcon/>{property.area}</p><div>{amenities[property.id].map(item=><span key={item}>{item}</span>)}</div></div>
+              <aside><strong>{property.price}</strong><time>{index===0?"لحظاتی پیش":index===1?"۲ ساعت پیش":"دیروز، ۱۸:۴۰"}</time><button onClick={(event)=>{event.stopPropagation();onFavorite(property.id)}} aria-label="علاقه‌مندی">{favorites.includes(property.id)?<HeartFilledIcon/>:<HeartIcon/>}</button></aside>
+            </article>)}
+            {!archive.length&&<div className="home-empty"><MagnifyingGlassIcon/><strong>ملکی با این جست‌وجو پیدا نشد</strong></div>}
           </div>
-          <Carousel className="property-carousel" ariaLabel="فایل‌های ویژه">
-            {properties.map((property) => (
-              <PropertyCard
-                key={property.id}
-                property={property}
-                onOpen={() => onOpen(property)}
-                favorite={favorites.includes(property.id)}
-                onFavorite={() => onFavorite(property.id)}
-              />
-            ))}
-          </Carousel>
-        </section>
-
-        <section className="ai-banner">
-          <div className="ai-mark">AI</div>
-          <div>
-            <span>دستیار هوشمند حاتم</span>
-            <strong>ملک مناسب شما را دقیق‌تر پیدا می‌کنیم</strong>
-          </div>
-          <ChevronLeftIcon />
-        </section>
-
-        <section className="section-block suggestions">
-          <div className="section-heading">
-            <h2>پیشنهادهای هوشمند برای شما</h2>
-          </div>
-          <PropertyCard
-            property={properties[2]}
-            onOpen={() => onOpen(properties[2])}
-            favorite={favorites.includes(3)}
-            onFavorite={() => onFavorite(3)}
-          />
         </section>
       </main>
     </MobileScroll>
+    {menuOpen&&<div className="app-menu-backdrop" role="presentation" onMouseDown={()=>setMenuOpen(false)}><aside className="app-menu-drawer" role="dialog" aria-modal="true" aria-label="منوی اپ حاتم" onMouseDown={event=>event.stopPropagation()}><header><Brand/><button onClick={()=>setMenuOpen(false)} aria-label="بستن منو"><Cross2Icon/></button></header><nav>{menuItems.filter(item=>item.variant==="item").map(item=>{const Icon=menuIcons[item.icon]||HomeIcon;return <button key={item.id} onClick={()=>runMenuAction(item)}><Icon/><span>{item.label}</span></button>})}</nav>{menuItems.filter(item=>item.variant==="cta").map(item=>{const Icon=menuIcons[item.icon]||PlusCircledIcon;return <button key={item.id} className="app-menu-urgent" onClick={()=>runMenuAction(item)}><Icon/><span><strong>{item.label}</strong>{item.subtitle&&<small>{item.subtitle}</small>}</span></button>})}</aside></div>}
+    </>
   );
 }
+
+function numericValue(value:string){return value.replace(/[۰-۹]/g,digit=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g,digit=>String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/\D/g,"")}
+function faMoney(value:string){const digits=numericValue(value);return digits?Number(digits).toLocaleString("fa-IR"):""}
+
+function FilterScreen({mode,onBack,onApply}:{mode:FilterMode;onBack:()=>void;onApply:()=>void}){
+  const [config,setConfig]=useState<FilterConfig>(defaultFilterConfig);
+  const [more,setMore]=useState(mode==="manual");
+  const [minPrice,setMinPrice]=useState("5000000000"),[maxPrice,setMaxPrice]=useState("20000000000");
+  const [minArea,setMinArea]=useState("70"),[maxArea,setMaxArea]=useState("250"),[beds,setBeds]=useState(2);
+  const [regions,setRegions]=useState<string[]>([]),[neighborhoods,setNeighborhoods]=useState<string[]>([]),[minBuildYear,setMinBuildYear]=useState("1385"),[maxBuildYear,setMaxBuildYear]=useState("1405");
+  const [amenities,setAmenities]=useState<string[]>(["پارکینگ","آسانسور"]);
+  const toggle=(list:string[],value:string,setter:(next:string[])=>void)=>setter(list.includes(value)?list.filter(item=>item!==value):[...list,value]);
+  useEffect(()=>{fetchFilterConfig().then(setConfig);const sync=(event:Event)=>setConfig((event as CustomEvent<FilterConfig>).detail||readFilterConfig());const syncStorage=(event:StorageEvent)=>{if(event.key==="hatam-filter-config-v1")setConfig(readFilterConfig())};window.addEventListener("hatam-filter-config-changed",sync);window.addEventListener("storage",syncStorage);return()=>{window.removeEventListener("hatam-filter-config-changed",sync);window.removeEventListener("storage",syncStorage)}},[]);
+  useEffect(()=>{const years=config.buildingAges.filter(value=>/^\d{4}$/.test(value)).sort((a,b)=>Number(a)-Number(b));if(!years.length)return;if(!years.includes(minBuildYear))setMinBuildYear(years[0]);if(!years.includes(maxBuildYear))setMaxBuildYear(years[years.length-1])},[config.buildingAges,minBuildYear,maxBuildYear]);
+  const visibleNeighborhoods=config.regions.filter(region=>regions.includes(region.id)).flatMap(region=>region.neighborhoods.map(name=>({key:`${region.id}-${name}`,name,region:region.name})));
+  const buildingYears=config.buildingAges.filter(value=>/^\d{4}$/.test(value)).sort((a,b)=>Number(b)-Number(a));
+  const toggleRegion=(id:string)=>{const next=regions.includes(id)?regions.filter(item=>item!==id):[...regions,id];setRegions(next);const allowed=new Set(config.regions.filter(region=>next.includes(region.id)).flatMap(region=>region.neighborhoods));setNeighborhoods(current=>current.filter(item=>allowed.has(item)))};
+  return <MobileScroll key="filter" className="app-screen hatam-scroll app-filter-scroll"><main className="filter-page" dir="rtl">
+    <header className="filter-logo-row"><Brand/></header>
+    <div className="filter-title"><button onClick={onBack} aria-label="بازگشت"><ChevronLeftIcon/></button><div><h1>{mode==="manual"?"فیلتر دستی":"خرید سریع"}</h1><p>محدوده موردنظرتان را انتخاب کنید</p></div><span/></div>
+    <section className="filter-card"><h2>قیمت ملک</h2><p>همه مبالغ بر اساس تومان هستند</p><div className="dual-fields"><label><span>از</span><input inputMode="numeric" value={faMoney(minPrice)} onChange={e=>setMinPrice(e.target.value.replace(/\D/g,""))}/><small>تومان</small></label><label><span>تا</span><input inputMode="numeric" value={faMoney(maxPrice)} onChange={e=>setMaxPrice(e.target.value.replace(/\D/g,""))}/><small>تومان</small></label></div></section>
+    {mode==="quick"&&!more&&<button className="more-filters" onClick={()=>setMore(true)}><MixerHorizontalIcon/>فیلترهای بیشتر<ChevronLeftIcon/></button>}
+    {more&&<>
+      <section className="filter-card"><h2>موقعیت ملک</h2><div className="select-label"><span>منطقه <small>چند انتخابی</small></span><div className="choice-row">{config.regions.map(item=><button className={regions.includes(item.id)?"active":""} key={item.id} onClick={()=>toggleRegion(item.id)}>{item.name}</button>)}</div></div>{regions.length>0&&<div className="select-label neighborhood-picker"><span>محله‌های مناطق انتخاب‌شده <small>چند انتخابی</small></span><div className="neighborhood-list">{visibleNeighborhoods.map(item=><button className={neighborhoods.includes(item.name)?"active":""} key={item.key} onClick={()=>toggle(neighborhoods,item.name,setNeighborhoods)}><span>{item.name}</span><small>{item.region}</small></button>)}</div></div>}<button className="map-search-button" onClick={()=>window.alert("صفحه جست‌وجو روی نقشه در مرحله طراحی بعدی تکمیل می‌شود.")}><DrawingPinIcon/><span><strong>جست‌وجو روی نقشه</strong><small>انتخاب محدوده دلخواه</small></span><ChevronLeftIcon/></button></section>
+      <section className="filter-card"><h2>مشخصات ملک</h2><label className="field-caption">متراژ <small>متر مربع</small></label><div className="dual-fields area-fields"><label><span>از</span><input inputMode="numeric" value={minArea} onChange={e=>setMinArea(e.target.value.replace(/\D/g,""))}/><small>متر</small></label><label><span>تا</span><input inputMode="numeric" value={maxArea} onChange={e=>setMaxArea(e.target.value.replace(/\D/g,""))}/><small>متر</small></label></div><div className="stepper-row"><span>تعداد خواب</span><div><button onClick={()=>setBeds(Math.max(0,beds-1))}>−</button><strong>{beds.toLocaleString("fa-IR")}</strong><button onClick={()=>setBeds(beds+1)}>+</button></div></div><label className="field-caption build-year-caption">سال ساخت <small>بازه زمانی</small></label><div className="dual-fields build-year-range"><label><span>از</span><select aria-label="سال ساخت از" value={minBuildYear} onChange={e=>{const value=e.target.value;setMinBuildYear(value);if(Number(value)>Number(maxBuildYear))setMaxBuildYear(value)}}>{buildingYears.map(value=><option key={value} value={value}>{Number(value).toLocaleString("fa-IR",{useGrouping:false})}</option>)}</select><small>سال</small></label><label><span>تا</span><select aria-label="سال ساخت تا" value={maxBuildYear} onChange={e=>{const value=e.target.value;setMaxBuildYear(value);if(Number(value)<Number(minBuildYear))setMinBuildYear(value)}}>{buildingYears.map(value=><option key={value} value={value}>{Number(value).toLocaleString("fa-IR",{useGrouping:false})}</option>)}</select><small>سال</small></label></div></section>
+      <section className="filter-card"><h2>امکانات</h2><div className="amenity-toggles">{config.amenities.map(item=><button className={amenities.includes(item)?"active":""} aria-pressed={amenities.includes(item)} key={item} onClick={()=>toggle(amenities,item,setAmenities)}><span>{item}</span><i/></button>)}</div></section>
+    </>}
+    <button className="show-files-button" onClick={onApply}>مشاهده فایل‌ها</button>
+  </main></MobileScroll>
+}
+
+function UrgentSaleScreen({onBack,onDone,entry="default"}:{onBack:()=>void;onDone:()=>void;entry?:"default"|"trust"|"cooperate"}){
+  const config=readFilterConfig();
+  const [form,setForm]=useState({firstName:"",lastName:"",address:"",area:"",bedrooms:2,buildingAge:"",floor:1,unitsPerFloor:1,expectedPrice:"",locationSet:false});
+  const [amenities,setAmenities]=useState<string[]>(["پارکینگ"]),[errors,setErrors]=useState<Record<string,string>>({}),[success,setSuccess]=useState(false),[submitting,setSubmitting]=useState(false);
+  const set=(key:string,value:unknown)=>setForm(current=>({...current,[key]:value}));
+  const toggleAmenity=(value:string)=>setAmenities(current=>current.includes(value)?current.filter(item=>item!==value):[...current,value]);
+  const submit=async()=>{const next:Record<string,string>={};if(form.firstName.trim().length<2)next.firstName="نام را کامل وارد کنید.";if(form.lastName.trim().length<2)next.lastName="نام خانوادگی را کامل وارد کنید.";if(form.address.trim().length<8)next.address="آدرس کامل ملک را وارد کنید.";if(!form.locationSet)next.location="لوکیشن ملک را ثبت کنید.";if(Number(form.area)<20)next.area="متراژ معتبر وارد کنید.";if(!/^\d{4}$/.test(form.buildingAge)||Number(form.buildingAge)<1300||Number(form.buildingAge)>1405)next.buildingAge="سال ساخت معتبر وارد کنید.";if(Number(form.expectedPrice)<1000000)next.expectedPrice="قیمت مدنظر را به تومان وارد کنید.";setErrors(next);if(Object.keys(next).length)return;setSubmitting(true);try{await createUrgentSale({firstName:form.firstName.trim(),lastName:form.lastName.trim(),address:form.address.trim(),locationSet:true,area:Number(form.area),bedrooms:form.bedrooms,buildingAge:Number(form.buildingAge),floor:form.floor,unitsPerFloor:form.unitsPerFloor,amenities,expectedPrice:Number(form.expectedPrice)});setSuccess(true)}catch{setErrors({submit:"ثبت درخواست انجام نشد؛ اتصال را بررسی و دوباره تلاش کنید."})}finally{setSubmitting(false)}};
+  return <MobileScroll key="urgent" className="app-screen hatam-scroll urgent-scroll"><main className="urgent-page" dir="rtl"><header className="filter-logo-row"><Brand/></header><div className="filter-title"><button onClick={onBack} aria-label="بازگشت"><ChevronLeftIcon/></button><div><h1>{entry==="default"?"فروش فوری ملک":"ثبت مشخصات ملک"}</h1><p>ثبت درخواست ارزیابی سریع</p></div><span/></div>{entry!=="cooperate"&&<div className="urgent-intro"><strong>{entry==="trust"?"برای فروش ملک شما در سریع‌ترین زمان ممکن و مناسب‌ترین قیمت فقط کافیه مشخصات زیر را پر کنید:":"اگه عجله داری و در ۷۲ ساعت می‌خوای ملکت رو بفروشی، مشخصات زیر رو پر کن."}</strong><span>کارشناسان حاتم خیلی سریع درخواست شما را بررسی می‌کنند.</span></div>}
+    <section className="filter-card urgent-card"><h2>اطلاعات مالک</h2><div className="dual-fields text-fields"><label><span>نام *</span><input value={form.firstName} onChange={e=>set("firstName",e.target.value)} aria-invalid={!!errors.firstName}/></label><label><span>نام خانوادگی *</span><input value={form.lastName} onChange={e=>set("lastName",e.target.value)} aria-invalid={!!errors.lastName}/></label></div>{(errors.firstName||errors.lastName)&&<p className="form-error">{errors.firstName||errors.lastName}</p>}<label className="wide-text-field"><span>آدرس کامل ملک *</span><input value={form.address} onChange={e=>set("address",e.target.value)} aria-invalid={!!errors.address}/></label>{errors.address&&<p className="form-error">{errors.address}</p>}<button className={`location-register ${form.locationSet?"done":""}`} onClick={()=>set("locationSet",true)}><DrawingPinIcon/><span>{form.locationSet?"لوکیشن ثبت شد":"ثبت لوکیشن ملک"}</span>{form.locationSet&&<CheckCircledIcon/>}</button>{errors.location&&<p className="form-error">{errors.location}</p>}</section>
+    <section className="filter-card urgent-card"><h2>مشخصات ملک</h2><div className="triple-fields"><label><span>متراژ *</span><input inputMode="numeric" value={form.area} onChange={e=>set("area",e.target.value.replace(/\D/g,""))}/><small>متر</small></label><label><span>تعداد خواب</span><input inputMode="numeric" value={form.bedrooms} onChange={e=>set("bedrooms",Number(e.target.value.replace(/\D/g,"")))}/></label><label><span>سال ساخت *</span><input inputMode="numeric" value={form.buildingAge} onChange={e=>set("buildingAge",e.target.value.replace(/\D/g,"").slice(0,4))}/></label></div>{(errors.area||errors.buildingAge)&&<p className="form-error">{errors.area||errors.buildingAge}</p>}<div className="two-steppers"><Counter label="طبقه" value={form.floor} setValue={value=>set("floor",value)}/><Counter label="تعداد واحد در طبقه" value={form.unitsPerFloor} setValue={value=>set("unitsPerFloor",value)}/></div></section>
+    <section className="filter-card urgent-card"><h2>امکانات</h2><div className="amenity-toggles">{config.amenities.map(item=><button className={amenities.includes(item)?"active":""} aria-pressed={amenities.includes(item)} key={item} onClick={()=>toggleAmenity(item)}><span>{item}</span><i/></button>)}</div></section>
+    <section className="filter-card urgent-card"><label className="price-text-field"><span>قیمت مدنظر شما *</span><div><input inputMode="numeric" value={form.expectedPrice?faMoney(form.expectedPrice):""} onChange={e=>set("expectedPrice",numericValue(e.target.value))}/><small>تومان</small></div></label>{errors.expectedPrice&&<p className="form-error">{errors.expectedPrice}</p>}</section>{errors.submit&&<p className="form-error">{errors.submit}</p>}<button className="show-files-button urgent-submit" disabled={submitting} onClick={submit}>{submitting?"در حال ثبت…":"ثبت درخواست فروش فوری"}</button>
+    {success&&<div className="success-backdrop" role="dialog" aria-label="ثبت موفق درخواست"><div className="success-popup"><CheckCircledIcon/><h2>درخواست شما ثبت شد</h2><p>کارشناسان ما خیلی سریع با شما تماس می‌گیرند.</p><button onClick={onDone}>بازگشت به صفحه اصلی</button></div></div>}
+  </main></MobileScroll>
+}
+
+function Counter({label,value,setValue}:{label:string;value:number;setValue:(value:number)=>void}){return <div className="counter-card"><span>{label}</span><div><button onClick={()=>setValue(Math.max(0,value-1))}>−</button><strong>{value.toLocaleString("fa-IR")}</strong><button onClick={()=>setValue(value+1)}>+</button></div></div>}
 
 function SearchScreen({ onOpen, favorites, onFavorite, filterOpen, setFilterOpen }: {
   onOpen: (property: Property) => void;
@@ -220,7 +303,7 @@ function SearchScreen({ onOpen, favorites, onFavorite, filterOpen, setFilterOpen
           <div className="quick-filters">
             <button className="active">خرید</button>
             <button>اجاره</button>
-            <button>نوساز</button>
+            <button>پارکینگ</button>
             <button>۲ خواب</button>
           </div>
           <div className="result-heading">
@@ -317,25 +400,95 @@ function FavoritesScreen({ favorites, onOpen, onFavorite }: { favorites: number[
 }
 
 function ProfileScreen() {
-  return <MobileScroll key="profile" className="app-screen hatam-scroll"><main className="profile-screen" dir="rtl"><Brand /><div className="profile-avatar"><PersonIcon /></div><h1>سلام، حاتم</h1><p>مدیریت درخواست‌ها و فایل‌های ذخیره‌شده</p><div className="profile-stats"><div><strong>۱۲</strong><span>بازدیدها</span></div><div><strong>۳</strong><span>درخواست‌ها</span></div><div><strong>۲</strong><span>مشاورها</span></div></div><div className="profile-menu"><button><CalendarIcon /><span>درخواست‌های بازدید</span><ChevronLeftIcon /></button><button><BookmarkFilledIcon /><span>فایل‌های ذخیره‌شده</span><ChevronLeftIcon /></button><button><ChatBubbleIcon /><span>گفت‌وگوها</span><ChevronLeftIcon /></button></div></main></MobileScroll>;
+  return <MobileScroll key="profile" className="app-screen hatam-scroll"><main className="profile-screen" dir="rtl"><Brand /><div className="profile-avatar"><PersonIcon /></div><h1>سلام، حاتم</h1><p>مدیریت درخواست‌ها و فایل‌های ذخیره‌شده</p><button className="primary-action" onClick={()=>window.location.href="/login"}>ورود یا ثبت‌نام با موبایل</button><div className="profile-stats"><div><strong>۱۲</strong><span>بازدیدها</span></div><div><strong>۳</strong><span>درخواست‌ها</span></div><div><strong>۲</strong><span>مشاورها</span></div></div><div className="profile-menu"><button><CalendarIcon /><span>درخواست‌های بازدید</span><ChevronLeftIcon /></button><button><BookmarkFilledIcon /><span>فایل‌های ذخیره‌شده</span><ChevronLeftIcon /></button><button><ChatBubbleIcon /><span>گفت‌وگوها</span><ChevronLeftIcon /></button></div></main></MobileScroll>;
+}
+
+const appMapIcons={neshan:DrawingPinIcon,google:GlobeIcon,balad:DrawingPinIcon};
+const appSocialIcons={bale:EnvelopeClosedIcon,whatsapp:ChatBubbleIcon,instagram:CameraIcon,telegram:PaperPlaneIcon};
+function AppContactScreen({onBack}:{onBack:()=>void}){const [config,setConfig]=useState<ContactConfig>(defaultContactConfig);useEffect(()=>{fetch("/api/contact").then(r=>r.json()).then(data=>data.config&&setConfig(data.config)).catch(()=>{})},[]);const tel=(value:string)=>value.replace(/[^\d+]/g,"");return <MobileScroll key="contact" className="app-screen hatam-scroll app-contact-scroll"><main className="contact-page contact-page-in-app" dir="rtl"><header className="contact-topbar"><button onClick={onBack} aria-label="بازگشت"><ChevronLeftIcon/></button><strong>{config.title}</strong><Brand/></header><section className="contact-card"><div className="contact-heading"><span>در کنار شما</span><h1>{config.title}</h1><p>{config.intro}</p></div><div className="contact-address"><DrawingPinIcon/><div><strong>{config.addressLabel}:</strong><p>{config.address}</p></div></div><div className="contact-map-links">{config.maps.filter(x=>x.enabled&&x.url).map(item=>{const Icon=appMapIcons[item.id as keyof typeof appMapIcons]||DrawingPinIcon;return <a key={item.id} href={item.url} target="_blank" rel="noreferrer"><Icon/><span>{item.label}</span><ExternalLinkIcon/></a>})}</div><div className="contact-divider"/><section className="contact-phones"><h2>شماره تماس</h2>{config.phones.map(phone=><a key={phone} href={`tel:${tel(phone)}`} dir="ltr"><MobileIcon/><span>{phone}</span></a>)}</section><div className="contact-divider"/><section className="contact-social"><h2>شبکه‌های اجتماعی</h2><div>{config.socials.filter(x=>x.enabled&&x.url).map(item=>{const Icon=appSocialIcons[item.id as keyof typeof appSocialIcons]||GlobeIcon;return <a key={item.id} href={item.url} target="_blank" rel="noreferrer"><Icon/><span>{item.label}</span></a>})}</div></section></section><p className="contact-signature">مسیر روشن، کار جمع</p></main></MobileScroll>}
+
+function CooperateScreen({onAction}:{onAction:(action:CooperateMethod["action"],target?:string)=>void}){const [open,setOpen]=useState("buy"),[config,setConfig]=useState<CooperateConfig>(defaultCooperateConfig);useEffect(()=>{fetch("/api/cooperate").then(r=>r.json()).then(x=>x.config&&setConfig(x.config)).catch(()=>{})},[]);return <MobileScroll key="cooperate" className="app-screen hatam-scroll cooperate-scroll"><main className="cooperate-page" dir="rtl"><section className="cooperate-hero"><span>{config.eyebrow}</span><h1>{config.title}</h1><div className="cooperate-intro"><strong>{config.introTitle}</strong><p>{config.intro}</p></div></section><section className="cooperate-methods" aria-label="روش‌های همکاری">{config.methods.filter(x=>x.enabled).map((method,index)=><article key={method.id} className={`cooperate-accordion ${open===method.id?"open":""}`}><button aria-expanded={open===method.id} onClick={()=>setOpen(open===method.id?"":method.id)}><span className="cooperate-method-icon">{index===0?<HomeIcon/>:index===1?<PlusCircledIcon/>:<IdCardIcon/>}</span><span><small>روش {(index+1).toLocaleString("fa-IR")} همکاری</small><strong>{method.title}</strong></span><ChevronLeftIcon/></button>{open===method.id&&<div className="cooperate-panel"><p>{method.text}</p><button className="cooperate-consultants" onClick={()=>onAction(method.action,method.target)}><PlusCircledIcon/><span>{method.buttonLabel}</span><ChevronLeftIcon/></button></div>}</article>)}</section><p className="cooperate-signature">مسیر روشن، کار جمع</p></main></MobileScroll>}
+
+function CooperateFormScreen({onDone}:{onDone:()=>void}){const successDefault="متشکرم، کارشناسان ما در سریع‌ترین زمان با شما تماس خواهند گرفت و تایم مصاحبه را به شما اعلام می‌کنند.";const [config,setConfig]=useState(defaultCooperateConfig),[form,setForm]=useState<Record<string,string>>({}),[hasExperience,setHasExperience]=useState(false),[notice,setNotice]=useState(""),[success,setSuccess]=useState(false),[saving,setSaving]=useState(false);useEffect(()=>{fetch("/api/cooperate").then(r=>r.json()).then(x=>x.config&&setConfig(x.config)).catch(()=>{})},[]);const fields=config.fields.filter(x=>x.enabled),base=fields.filter(x=>["firstName","lastName","age"].includes(x.id)),experience=fields.filter(x=>!["firstName","lastName","age"].includes(x.id));const submit=async()=>{if(base.some(x=>x.required&&!form[x.id]?.trim())||(hasExperience&&experience.some(x=>x.required&&!form[x.id]?.trim()))){setSuccess(false);setNotice("لطفاً همه فیلدهای ضروری را کامل کنید.");return}setSaving(true);try{const r=await fetch("/api/cooperate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...form,hasExperience,areas:form.areas||""})});if(!r.ok)throw new Error();setSuccess(true);setNotice(config.successMessage||successDefault)}catch{setSuccess(false);setNotice("ثبت اطلاعات انجام نشد؛ دوباره تلاش کنید.")}finally{setSaving(false)}};return <MobileScroll key="cooperate-form" className="app-screen hatam-scroll cooperate-scroll"><main className="cooperate-page cooperate-form" dir="rtl"><section className="cooperate-hero"><span>درخواست همکاری</span><h1>{config.formTitle}</h1></section><section className="cooperate-form-card"><h2>مشخصات شما</h2><div className="cooperate-form-grid">{base.map(field=><label key={field.id}><span>{field.label}{field.required?" *":""}</span><input inputMode={field.type==="number"?"numeric":"text"} value={form[field.id]||""} onChange={e=>setForm({...form,[field.id]:field.type==="number"?e.target.value.replace(/\D/g,""):e.target.value})}/></label>)}</div></section><section className="cooperate-form-card"><h2>تجربه و سابقه</h2><p>{config.experienceQuestion}</p><div className="experience-toggle" role="radiogroup" aria-label="سابقه فعالیت"><button role="radio" aria-checked={!hasExperience} className={!hasExperience?"active":""} onClick={()=>setHasExperience(false)}><i/>ندارم</button><button role="radio" aria-checked={hasExperience} className={hasExperience?"active":""} onClick={()=>setHasExperience(true)}><i/>دارم</button></div>{hasExperience&&<div className="experience-details"><div className="cooperate-form-grid experience-fields">{experience.map(field=><label key={field.id}><span>{field.label}{field.required?" *":""}</span><input value={form[field.id]||""} onChange={e=>setForm({...form,[field.id]:e.target.value})}/></label>)}</div></div>}</section>{notice&&<div className={`cooperate-form-notice ${success?"success":""}`} role="status">{success&&<CheckCircledIcon/>}<p>{notice}</p>{success&&<button onClick={onDone}>بازگشت به همکاری با ما</button>}</div>}<button className="cooperate-form-submit" disabled={saving||success} onClick={submit}>{saving?"در حال ثبت...":"ثبت مشخصات"}</button></main></MobileScroll>}
+
+type LoginRole="user"|"consultant"|"agency";
+function AppLoginScreen({initialRole,initialMode,onDone}:{initialRole:LoginRole;initialMode:"login"|"register";onDone:()=>void}){const [role,setRole]=useState<LoginRole>(initialRole),[mode,setMode]=useState(initialMode),[mobile,setMobile]=useState(""),[challenge,setChallenge]=useState(""),[code,setCode]=useState(""),[developmentCode,setDevelopmentCode]=useState(""),[busy,setBusy]=useState(false),[message,setMessage]=useState("");const request=async()=>{setBusy(true);setMessage("");try{const r=await fetch("/api/auth/request-otp",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({mobile,role,mode})}),data=await r.json();if(!r.ok)throw new Error(data.error||"REQUEST_FAILED");setChallenge(data.challengeId);setDevelopmentCode(data.developmentCode||"");setMessage("کد یک‌بارمصرف ارسال شد.")}catch(e){setMessage(e instanceof Error&&e.message==="RATE_LIMITED"?"لطفاً یک دقیقه دیگر دوباره تلاش کنید.":"ارسال کد انجام نشد؛ شماره را بررسی کنید.")}finally{setBusy(false)}};const verify=async()=>{setBusy(true);setMessage("");try{const r=await fetch("/api/auth/verify-otp",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({challengeId:challenge,mobile,role,mode,code})}),data=await r.json();if(!r.ok)throw new Error(data.error||"VERIFY_FAILED");if(data.destination)window.location.href=data.destination;else{setMessage("ثبت‌نام انجام شد و حساب شما در انتظار تأیید مدیر است.");window.setTimeout(onDone,1800)}}catch{setMessage("کد واردشده معتبر نیست یا منقضی شده است.")}finally{setBusy(false)}};const labels={user:"خریدار و فروشنده",consultant:"مشاور املاک",agency:"آژانس املاک"};return <MobileScroll key="login" className="app-screen hatam-scroll app-login-scroll"><main className="app-login-page" dir="rtl"><section className="app-login-card"><div className="app-login-mark"><LockClosedIcon/></div><span>ورود امن به حاتم</span><h1>{mode==="login"?"ورود به حساب کاربری":"ساخت حساب جدید"}</h1><p>نقش حساب را انتخاب کنید و شماره موبایل خودتان را وارد کنید.</p><div className="app-login-roles">{(Object.keys(labels) as LoginRole[]).map(value=><button key={value} className={role===value?"active":""} onClick={()=>{setRole(value);setChallenge("")}}>{labels[value]}</button>)}</div>{!challenge?<label className="app-login-field"><span>شماره موبایل</span><input dir="ltr" inputMode="tel" value={mobile} onChange={e=>setMobile(e.target.value.replace(/[^\d+]/g,""))} placeholder="09120000000"/></label>:<label className="app-login-field"><span>کد یک‌بارمصرف</span><input dir="ltr" inputMode="numeric" maxLength={4} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,""))} placeholder="— — — —"/>{developmentCode&&<small>کد آزمایشی محلی: {developmentCode}</small>}</label>}<button className="app-login-submit" disabled={busy||(!challenge?mobile.length<11:code.length!==4)} onClick={challenge?verify:request}>{busy?"لطفاً صبر کنید...":challenge?"تأیید و ادامه":"دریافت کد ورود"}</button>{challenge&&<button className="app-login-change" onClick={()=>{setChallenge("");setCode("")}}>تغییر شماره موبایل</button>}{message&&<p className="app-login-message" role="status">{message}</p>}<button className="app-login-mode" onClick={()=>{setMode(mode==="login"?"register":"login");setChallenge("")}}>{mode==="login"?"حساب ندارید؟ ثبت‌نام کنید":"حساب دارید؟ وارد شوید"}</button></section></main></MobileScroll>}
+
+function SubmitChoiceScreen({onBack,onOwner,onConsultant}:{onBack:()=>void;onOwner:()=>void;onConsultant:()=>void}) {
+  return <MobileScroll key="submit-choice" className="app-screen hatam-scroll submit-choice-scroll"><main className="submit-choice-page" dir="rtl">
+    <header className="submit-topbar"><button onClick={onBack} aria-label="بازگشت"><ChevronLeftIcon/></button><Brand/><button aria-label="منو"><HamburgerMenuIcon/></button></header>
+    <section className="submit-choice-card"><span>ثبت ملک در حاتم</span><h1>نوع کاربری خود را انتخاب کنید</h1><p>مسیر ثبت ملک متناسب با نقش شما نمایش داده می‌شود.</p>
+      <button className="role-choice primary" onClick={onOwner}><HomeIcon/><span><strong>فروشنده / مالک هستم</strong><small>ثبت سریع درخواست فروش ملک</small></span><ChevronLeftIcon/></button>
+      <button className="role-choice" onClick={onConsultant}><IdCardIcon/><span><strong>مشاور املاک هستم</strong><small>ثبت فایل حرفه‌ای و ارسال برای تأیید</small></span><ChevronLeftIcon/></button>
+    </section>
+    <section className="submit-brand-copy"><Brand/><h2>املاک بزرگ حاتم</h2><p>خرید و فروش تخصصی املاک و مستغلات در شرق تهران</p><strong>مسیر روشنِ کار جمع</strong></section>
+  </main></MobileScroll>
+}
+
+function ConsultantSubmitScreen({onBack,onDone,dark,toggleTheme}:{onBack:()=>void;onDone:()=>void;dark:boolean;toggleTheme:()=>void}) {
+  const [config,setConfig]=useState<FilterConfig>(defaultFilterConfig);
+  const [form,setForm]=useState<Record<string,string>>({name:"",office:"",region:"",neighborhood:"",area:"",bedrooms:"",age:"",floor:"",floors:"",units:"",facade:"سنگ",passage:"",deposit:"",rent:"",vacateDate:"",internalPrice:"",publicPrice:""});
+  const [amenities,setAmenities]=useState<string[]>([]),[deeds,setDeeds]=useState<string[]>([]),[occupancy,setOccupancy]=useState("تخلیه"),[media,setMedia]=useState<Array<{name:string;url:string;type:string}>>([]),[error,setError]=useState(""),[success,setSuccess]=useState(false),[saving,setSaving]=useState(false);
+  const set=(key:string,value:string)=>setForm(current=>({...current,[key]:value}));
+  const money=(key:string,value:string)=>set(key,value.replace(/\D/g,""));
+  const toggle=(value:string,list:string[],setter:(next:string[])=>void)=>setter(list.includes(value)?list.filter(item=>item!==value):[...list,value]);
+  useEffect(()=>{fetchFilterConfig().then(setConfig)},[]);
+  const submit=async()=>{setError("");if(!form.name.trim()||!form.office.trim()||!form.region||!form.neighborhood||!form.area||!form.publicPrice){setError("نام، دفتر، موقعیت، متراژ و قیمت نمایش را کامل کنید.");return}setSaving(true);try{const response=await fetch("/api/properties",{method:"POST",headers:{"content-type":"application/json","x-hatam-preview-role":"consultant"},body:JSON.stringify({title:`فایل ${form.area} متری ${form.neighborhood}`,address:`منطقه ${form.region}، ${form.neighborhood}`,district:form.region,latitude:35.7219,longitude:51.4477,transactionType:"sale",propertyType:"apartment",area:Number(form.area),bedrooms:Number(form.bedrooms||0),price:Number(form.publicPrice),description:JSON.stringify({...form,amenities,deeds,occupancy,media:media.map(item=>({name:item.name,type:item.type}))}),submitForReview:true})});if(!response.ok)throw new Error();setSuccess(true)}catch{setError("ثبت آنلاین انجام نشد. اتصال سرویس را بررسی کنید.")}finally{setSaving(false)}};
+  const numericFields:[[string,string],[string,string],[string,string],[string,string],[string,string],[string,string]]=[["area","متراژ *"],["bedrooms","تعداد خواب"],["age","سن بنا"],["floor","طبقه"],["floors","کل طبقات"],["units","واحد در طبقه"]];
+  return <MobileScroll key="consultant-submit" className="app-screen hatam-scroll consultant-submit-scroll"><main className="consultant-submit-page" dir="rtl">
+    <header className="consultant-submit-header"><button onClick={onBack} aria-label="بازگشت"><ChevronLeftIcon/></button><Brand/><div><button aria-label="اعلان‌ها"><BellIcon/></button><button onClick={toggleTheme} aria-label="تغییر پوسته">{dark?<SunIcon/>:<MoonIcon/>}</button><button aria-label="منو"><HamburgerMenuIcon/></button></div></header>
+    <div className="consultant-submit-title"><span>ثبت فایل حرفه‌ای</span><h1>مشخصات ملک را کامل کنید</h1><p>فایل پس از بررسی مدیر و تأیید اطلاعات منتشر می‌شود.</p></div>
+    <section className="submit-form-card"><h2>اطلاعات مشاور</h2><div className="submit-grid two"><Field label="نام و نام خانوادگی *" value={form.name} onChange={v=>set("name",v)}/><Field label="نام دفتر املاک *" value={form.office} onChange={v=>set("office",v)}/></div></section>
+    <section className="submit-form-card"><h2>عکس و فیلم ملک</h2><label className="media-drop"><PlusCircledIcon/><strong>افزودن عکس یا فیلم</strong><small>چند فایل را هم‌زمان انتخاب کنید</small><input type="file" accept="image/*,video/*" multiple onChange={e=>{const files=Array.from(e.target.files||[]);setMedia(current=>[...current,...files.map(file=>({name:file.name,type:file.type,url:URL.createObjectURL(file)}))])}}/></label>{media.length>0&&<div className="media-preview">{media.map((item,index)=><article key={`${item.name}-${index}`}>{item.type.startsWith("video")?<video src={item.url}/>:<img src={item.url} alt=""/>}<button onClick={()=>setMedia(current=>current.filter((_,i)=>i!==index))}><Cross2Icon/></button><small>{item.name}</small></article>)}</div>}</section>
+    <section className="submit-form-card"><h2>موقعیت ملک</h2><div className="submit-grid two"><label><span>منطقه *</span><select value={form.region} onChange={e=>{set("region",e.target.value);set("neighborhood","")}}><option value="">انتخاب کنید</option>{config.regions.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label><label><span>محله *</span><select value={form.neighborhood} disabled={!form.region} onChange={e=>set("neighborhood",e.target.value)}><option value="">انتخاب کنید</option>{(config.regions.find(v=>v.id===form.region)?.neighborhoods||[]).map(v=><option key={v}>{v}</option>)}</select></label></div><button className="submit-map-button"><DrawingPinIcon/><span><strong>انتخاب لوکیشن روی نقشه</strong><small>اتصال به نقشه در مرحله بعد</small></span><ChevronLeftIcon/></button></section>
+    <section className="submit-form-card"><h2>مشخصات ملک</h2><div className="submit-grid three">{numericFields.map(([key,label])=><Field key={key} label={label} value={form[key]} numeric onChange={v=>set(key,v)}/>)}</div><div className="submit-grid two"><label><span>نمای ساختمان</span><select value={form.facade} onChange={e=>set("facade",e.target.value)}>{config.facades.map(v=><option key={v}>{v}</option>)}</select></label><Field label="گذر کوچه یا خیابان" value={form.passage} onChange={v=>set("passage",v)}/></div></section>
+    <ToggleSection title="امکانات" values={config.amenities} selected={amenities} onToggle={v=>toggle(v,amenities,setAmenities)}/><ToggleSection title="نوع سند" values={config.deedTypes} selected={deeds} onToggle={v=>toggle(v,deeds,setDeeds)}/>
+    <section className="submit-form-card"><h2>وضعیت سکونت</h2><div className="submit-toggle-grid">{config.occupancyTypes.map(v=><button className={occupancy===v?"active":""} key={v} onClick={()=>setOccupancy(v)}><span>{v}</span><i/></button>)}</div>{occupancy==="مستأجر"&&<div className="tenant-fields submit-grid"><MoneyField label="پول پیش / رهن" value={form.deposit} onChange={v=>money("deposit",v)}/><MoneyField label="کرایه / اجاره" value={form.rent} onChange={v=>money("rent",v)}/><Field label="تاریخ تخلیه (شمسی)" value={form.vacateDate} placeholder="۱۴۰۵/۰۷/۱۵" onChange={v=>set("vacateDate",v)}/></div>}</section>
+    <section className="submit-form-card price-card"><h2>قیمت مدنظر</h2><MoneyField label="قیمت اصلی / کد داخلی" value={form.internalPrice} onChange={v=>money("internalPrice",v)}/><MoneyField label="قیمت قابل نمایش به مشتری *" value={form.publicPrice} onChange={v=>money("publicPrice",v)}/></section>
+    {error&&<p className="consultant-submit-error">{error}</p>}<button className="publish-property" disabled={saving} onClick={submit}>{saving?"در حال ارسال...":"ارسال برای بررسی و انتشار"}</button>
+    {success&&<div className="success-backdrop"><div className="success-popup"><CheckCircledIcon/><h2>فایل با موفقیت ثبت شد</h2><p>آگهی شما در صف بررسی مدیر قرار گرفت و پس از تأیید منتشر می‌شود.</p><button onClick={onDone}>بازگشت به صفحه اصلی</button></div></div>}
+  </main></MobileScroll>
+}
+
+function Field({label,value,onChange,numeric,placeholder}:{label:string;value:string;onChange:(v:string)=>void;numeric?:boolean;placeholder?:string}){return <label><span>{label}</span><input inputMode={numeric?"numeric":undefined} value={value} placeholder={placeholder} onChange={e=>onChange(numeric?e.target.value.replace(/\D/g,""):e.target.value)}/></label>}
+function MoneyField({label,value,onChange}:{label:string;value:string;onChange:(v:string)=>void}){return <label><span>{label}</span><div className="money-control"><input inputMode="numeric" value={value?Number(value).toLocaleString("fa-IR"):""} onChange={e=>onChange(e.target.value)}/><small>تومان</small></div></label>}
+function ToggleSection({title,values,selected,onToggle}:{title:string;values:string[];selected:string[];onToggle:(value:string)=>void}){return <section className="submit-form-card"><h2>{title}</h2><div className="submit-toggle-grid">{values.map(value=><button type="button" className={selected.includes(value)?"active":""} key={value} onClick={()=>onToggle(value)}><span>{value}</span><i/></button>)}</div></section>}
+
+type AiMessage={role:"assistant"|"user";content:string};
+type AiMatch={id:string;title:string;address:string;district:string|null;area:number;bedrooms:number;price:number;coverImage:string|null};
+function AiChatScreen({onBack,onShowFiles}:{onBack:()=>void;onShowFiles:()=>void}){
+  const [messages,setMessages]=useState<AiMessage[]>([{role:"assistant",content:"من اینجام تا بهترین گزینه را متناسب با بودجه و سلیقه‌تان پیدا کنم. چه ملکی می‌خواهید؟"}]),[input,setInput]=useState(""),[loading,setLoading]=useState(false),[matches,setMatches]=useState<AiMatch[]>([]),[listening,setListening]=useState(false);
+  const send=async()=>{const message=input.trim();if(!message||loading)return;const history=messages.slice(-8);setMessages(current=>[...current,{role:"user",content:message}]);setInput("");setLoading(true);try{const response=await fetch("/api/ai-assistant",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({message,history})}),result=await response.json();setMessages(current=>[...current,{role:"assistant",content:result.reply||result.message||"پاسخی دریافت نشد؛ دوباره تلاش کنید."}]);if(result.matches)setMatches(result.matches)}catch{setMessages(current=>[...current,{role:"assistant",content:"ارتباط برقرار نشد. چند لحظه دیگر دوباره تلاش کنید."}])}finally{setLoading(false)}};
+  const listen=()=>{const Speech=(window as unknown as {webkitSpeechRecognition?:new()=>{lang:string;interimResults:boolean;onresult:(event:{results:ArrayLike<{0:{transcript:string}}>} )=>void;onend:()=>void;start:()=>void}}).webkitSpeechRecognition;if(!Speech){setMessages(current=>[...current,{role:"assistant",content:"ورودی صوتی در این مرورگر پشتیبانی نمی‌شود؛ لطفاً درخواستتان را بنویسید."}]);return}const recognition=new Speech();recognition.lang="fa-IR";recognition.interimResults=false;recognition.onresult=event=>setInput(event.results[0][0].transcript);recognition.onend=()=>setListening(false);setListening(true);recognition.start()};
+  return <main className="ai-chat-page" dir="rtl"><header><button onClick={onBack} aria-label="بازگشت"><ChevronLeftIcon/></button><div><span>دستیار هوشمند</span><strong>حاتم</strong></div><i/></header><section className="ai-chat-body"><div className="ai-orb" aria-hidden="true"><span>AI</span><StarIcon/><StarIcon/><StarIcon/></div><p className="ai-online"><i/> آنلاین و آماده جست‌وجو</p><div className="ai-thread">{messages.map((message,index)=><div key={`${message.role}-${index}`} className={`ai-bubble ${message.role}`}>{message.content}</div>)}{loading&&<div className="ai-bubble assistant ai-typing"><i/><i/><i/><span>در حال جست‌وجوی فایل‌ها</span></div>}</div>{matches.length>0&&<section className="ai-matches"><header><strong>نزدیک‌ترین فایل‌ها</strong><span>{matches.length} پیشنهاد</span></header>{matches.map(item=><article key={item.id}>{item.coverImage?<img src={item.coverImage} alt=""/>:<div className="ai-match-placeholder"><HomeIcon/></div>}<div><strong>{item.title}</strong><span>{item.district||item.address}</span><small>{item.area.toLocaleString("fa-IR")} متر · {item.bedrooms.toLocaleString("fa-IR")} خواب</small></div><b>{item.price.toLocaleString("fa-IR")} تومان</b></article>)}<button onClick={onShowFiles}>مشاهده همه فایل‌ها</button></section>}</section><form className="ai-composer" onSubmit={event=>{event.preventDefault();send()}}><button type="button" className={listening?"listening":""} onClick={listen} aria-label="ورودی صوتی"><SpeakerLoudIcon/></button><input value={input} onChange={event=>setInput(event.target.value)} placeholder="پیام خود را بنویسید..." aria-label="پیام شما"/><button type="submit" disabled={!input.trim()||loading} aria-label="ارسال"><PaperPlaneIcon/></button></form></main>
 }
 
 function BottomNav({ screen, setScreen }: { screen: Screen; setScreen: (screen: Screen) => void }) {
   const keyboard = useKeyboard();
   const items = [
-    { id: "home" as Screen, label: "خانه", Icon: HomeIcon },
-    { id: "search" as Screen, label: "جست‌وجو", Icon: MagnifyingGlassIcon },
-    { id: "favorites" as Screen, label: "علاقه‌مندی", Icon: HeartIcon },
-    { id: "profile" as Screen, label: "پنل کاربری", Icon: PersonIcon },
+    { id: "favorites" as Screen, label: "علاقه‌مندی‌ها", Icon: HeartIcon, action:()=>setScreen("favorites") },
+    { id: "search" as Screen, label: "نقشه", Icon: DrawingPinIcon, action:()=>setScreen("search") },
+    { id: "submit-choice" as Screen, label: "ثبت ملک", Icon: Crosshair2Icon, action:()=>setScreen("submit-choice") },
+    { id: "consultants" as Screen, label: "مشاورین", Icon: IdCardIcon, action:()=>setScreen("consultants") },
+    { id: "login" as Screen, label: "ورود", Icon: PersonIcon, action:()=>setScreen("login") },
   ];
-  return <nav className="bottom-nav" dir="rtl" aria-label="ناوبری اصلی">{items.map(({ id, label, Icon }) => <button key={id} className={screen === id ? "active" : ""} onPointerDown={(event) => event.preventDefault()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); keyboard.hide(); window.setTimeout(() => { setScreen(id); resetDeviceScroll(); keyboard.hide(); }, 100); }}><Icon /><span>{label}</span></button>)}</nav>;
+  return <nav className="bottom-nav" dir="rtl" aria-label="ناوبری اصلی">{items.map(({ id, label, Icon, action },index) => <button key={`${label}-${index}`} className={screen === id && id!=="home" ? "active" : ""} onPointerDown={(event) => event.preventDefault()} onClick={(event) => { event.preventDefault(); event.stopPropagation(); keyboard.hide(); window.setTimeout(() => { action(); resetDeviceScroll(); keyboard.hide(); }, 100); }}><Icon /><span>{label}</span></button>)}</nav>;
 }
 
+function AppSharedHeader({screen,setScreen,dark,toggleTheme}:{screen:Screen;setScreen:(screen:Screen)=>void;dark:boolean;toggleTheme:()=>void}){const [open,setOpen]=useState(false),[items,setItems]=useState<AppMenuItem[]>(defaultAppMenuItems);useEffect(()=>{fetch("/api/app-menu",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject()).then(data=>setItems((data.items||defaultAppMenuItems).filter((x:AppMenuItem)=>x.enabled).sort((a:AppMenuItem,b:AppMenuItem)=>a.sortOrder-b.sortOrder))).catch(()=>setItems(defaultAppMenuItems))},[]);const icons:Record<string,typeof HomeIcon>={home:HomeIcon,heart:HeartIcon,rocket:RocketIcon,person:PersonIcon,bookmark:BookmarkFilledIcon,consultant:IdCardIcon,contact:EnvelopeClosedIcon,plus:PlusCircledIcon,login:PersonIcon};const run=(item:AppMenuItem)=>{setOpen(false);if(item.action==="home")setScreen("home");else if(item.action==="urgent"||item.action==="register-property")setScreen(item.action==="urgent"?"urgent":"submit-choice");else if(item.action==="featured")setScreen("home");else if(item.action==="contact")setScreen("contact");else if(item.action==="consultants")setScreen("cooperate");else if(item.action==="login")setScreen("login");else if(item.action==="url"&&item.target)window.location.href=item.target};return <><header className="app-shared-header" dir="rtl"><button className="app-shared-back" disabled={screen==="home"} onClick={()=>setScreen("home")} aria-label="بازگشت"><ChevronLeftIcon/></button><Brand/><div><button onClick={toggleTheme} aria-label={dark?"فعال‌کردن حالت روشن":"فعال‌کردن حالت تیره"}>{dark?<SunIcon/>:<MoonIcon/>}</button><button onClick={()=>setOpen(true)} aria-label="بازکردن منو"><HamburgerMenuIcon/></button></div></header>{open&&<div className="app-menu-backdrop shared-menu" role="presentation" onMouseDown={()=>setOpen(false)}><aside className="app-menu-drawer" role="dialog" aria-modal="true" aria-label="منوی اپ حاتم" onMouseDown={e=>e.stopPropagation()}><header><Brand/><button onClick={()=>setOpen(false)} aria-label="بستن منو"><Cross2Icon/></button></header><nav>{items.filter(x=>x.variant==="item").map(item=>{const Icon=icons[item.icon]||HomeIcon;return <button key={item.id} onClick={()=>run(item)}><Icon/><span>{item.label}</span></button>})}</nav>{items.filter(x=>x.variant==="cta").map(item=>{const Icon=icons[item.icon]||PlusCircledIcon;return <button key={item.id} className="app-menu-urgent" onClick={()=>run(item)}><Icon/><span><strong>{item.label}</strong>{item.subtitle&&<small>{item.subtitle}</small>}</span></button>})}</aside></div>}</>}
+
 export default function Prototype() {
+  const {theme,setTheme}=useTheme();
   const [screen, setScreen] = useState<Screen>("home");
   const [selected, setSelected] = useState<Property>(properties[0]);
   const [favorites, setFavorites] = useState<number[]>([2]);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filterMode, setFilterMode] = useState<FilterMode>("manual");
+  const dark=theme==="dark";
+  const [urgentEntry,setUrgentEntry]=useState<"default"|"trust"|"cooperate">("default");
+  const [loginRole,setLoginRole]=useState<LoginRole>("user"),[loginMode,setLoginMode]=useState<"login"|"register">("login");
+  useEffect(()=>{document.documentElement.classList.add("hatam-app-active");return()=>document.documentElement.classList.remove("hatam-app-active")},[]);
+  useEffect(()=>{const params=new URLSearchParams(window.location.search),requested=params.get("screen");if(requested==="urgent"){setUrgentEntry(params.get("source")==="trust"?"trust":"default");setScreen("urgent")}else if(requested==="filter"){setFilterMode("manual");setScreen("filter")}else if(requested==="ai-chat"){setScreen("ai-chat")}else if(requested==="contact"){setScreen("contact")}else if(requested==="cooperate"){setScreen("cooperate")}else if(requested==="login"){setScreen("login")}},[]);
   useEffect(() => {
     const frame = window.requestAnimationFrame(resetDeviceScroll);
     const immediate = window.setTimeout(resetDeviceScroll, 0);
@@ -353,13 +506,25 @@ export default function Prototype() {
   const toggleFavorite = (id: number) => setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const openProperty = (property: Property) => { setSelected(property); setScreen("detail"); };
   return (
-    <div className="hatam-app">
-      {screen === "home" && <HomeScreen onOpen={openProperty} favorites={favorites} onFavorite={toggleFavorite} goSearch={() => setScreen("search")} />}
+    <div className={`hatam-app ${dark?"theme-dark":"theme-light"}`}>
+      {screen!=="entry"&&<AppSharedHeader screen={screen} setScreen={setScreen} dark={dark} toggleTheme={()=>setTheme(dark?"light":"dark")}/>}
+      {screen === "entry" && <EntryScreen continueAsGuest={()=>setScreen("home")} openLogin={(role,mode)=>{setLoginRole(role);setLoginMode(mode);setScreen("login")}}/>}
+      {screen === "home" && <HomeScreen onOpen={openProperty} favorites={favorites} onFavorite={toggleFavorite} goSearch={() => setScreen("search")} openAiChat={()=>setScreen("ai-chat")} openContact={()=>setScreen("contact")} openFilter={(mode)=>{setFilterMode(mode);setScreen("filter")}} openUrgent={()=>{setUrgentEntry("default");setScreen("urgent")}} dark={dark} toggleTheme={()=>setTheme(dark?"light":"dark")} />}
+      {screen === "filter" && <FilterScreen mode={filterMode} onBack={()=>setScreen("home")} onApply={()=>setScreen("home")}/>}
+      {screen === "urgent" && <UrgentSaleScreen entry={urgentEntry} onBack={()=>setScreen(urgentEntry==="cooperate"?"cooperate":"home")} onDone={()=>setScreen("home")}/>}
+      {screen === "submit-choice" && <SubmitChoiceScreen onBack={()=>setScreen("home")} onOwner={()=>{setUrgentEntry("default");setScreen("urgent")}} onConsultant={()=>setScreen("consultant-submit")}/>}
+      {screen === "consultant-submit" && <ConsultantSubmitScreen onBack={()=>setScreen("submit-choice")} onDone={()=>setScreen("home")} dark={dark} toggleTheme={()=>setTheme(dark?"light":"dark")}/>}
       {screen === "search" && <SearchScreen onOpen={openProperty} favorites={favorites} onFavorite={toggleFavorite} filterOpen={filterOpen} setFilterOpen={setFilterOpen} />}
       {screen === "favorites" && <FavoritesScreen favorites={favorites} onOpen={openProperty} onFavorite={toggleFavorite} />}
       {screen === "profile" && <ProfileScreen />}
       {screen === "detail" && <DetailScreen property={selected} favorite={favorites.includes(selected.id)} onFavorite={() => toggleFavorite(selected.id)} onBack={() => setScreen("home")} />}
-      {screen !== "detail" && <BottomNav screen={screen} setScreen={setScreen} />}
+      {screen === "ai-chat" && <AiChatScreen onBack={()=>setScreen("home")} onShowFiles={()=>setScreen("search")}/>}
+      {screen === "contact" && <AppContactScreen onBack={()=>setScreen("home")}/>}
+      {screen === "cooperate" && <CooperateScreen onAction={(action,target)=>{if(action==="consultants")setScreen("search");else if(action==="sale-form"){setUrgentEntry("cooperate");setScreen("urgent")}else if(action==="cooperate-form")setScreen("cooperate-form");else if(action==="url"&&target)window.location.href=target}}/>}
+      {screen === "cooperate-form" && <CooperateFormScreen onDone={()=>setScreen("cooperate")}/>}
+      {screen === "consultants" && <MobileScroll key="consultants" className="app-screen hatam-scroll"><ConsultantDirectory inApp onBack={()=>setScreen("home")}/></MobileScroll>}
+      {screen === "login" && <><AppLoginScreen initialRole={loginRole} initialMode={loginMode} onDone={()=>setScreen("home")}/><AppPasswordLogin/></>}
+      {screen !== "detail" && screen !== "entry" && screen !== "filter" && screen !== "urgent" && screen !== "submit-choice" && screen !== "consultant-submit" && screen !== "ai-chat" && <BottomNav screen={screen} setScreen={setScreen} />}
     </div>
   );
 }

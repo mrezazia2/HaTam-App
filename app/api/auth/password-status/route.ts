@@ -1,0 +1,2 @@
+import {eq} from "drizzle-orm";import {getDb} from "../../../../db";import {accounts} from "../../../../db/schema";import {getRequestAccount} from "../../_lib/authorization";
+export async function GET(request:Request){const account=await getRequestAccount(request);if(!account)return Response.json({ok:false},{status:401});const row=(await getDb().select({passwordHash:accounts.passwordHash,mobile:accounts.mobile}).from(accounts).where(eq(accounts.id,account.id)).limit(1))[0];return Response.json({ok:true,hasPassword:!!row?.passwordHash,username:row?.mobile})}

@@ -1,0 +1,7 @@
+import Link from "next/link";
+import {and,desc,eq} from "drizzle-orm";
+import {getDb} from "../../../../db";
+import {accounts,properties} from "../../../../db/schema";
+import "./style.css";
+
+export default async function ConsultantProperties({params}:{params:Promise<{id:string}>}){const {id}=await params;const db=getDb();const consultant=(await db.select().from(accounts).where(and(eq(accounts.id,id),eq(accounts.role,"consultant"))).limit(1))[0];const items=await db.select().from(properties).where(and(eq(properties.status,"published"),eq(properties.consultantAccountId,id))).orderBy(desc(properties.featured),desc(properties.updatedAt));return <main className="consultant-properties-page" dir="rtl"><header><Link href="/consultants">بازگشت</Link><span>آرشیو اختصاصی مشاور</span><h1>املاک {consultant?.name||"مشاور حاتم"}</h1><p>فایل‌های منتشرشده و تأییدشده این مشاور را مشاهده کنید.</p></header><section>{items.map(item=><Link href={`/property/${item.id}`} key={item.id}><img src={item.coverImage||"/assets/hatam/property-1.webp"} alt={item.title}/><div><small>{item.id}</small><h2>{item.title}</h2><p>{item.address}</p><span>{item.area.toLocaleString("fa-IR")} متر · {item.bedrooms.toLocaleString("fa-IR")} خواب</span></div><b>{item.price.toLocaleString("fa-IR")} تومان</b></Link>)}{!items.length&&<div className="empty">در حال حاضر فایل منتشرشده‌ای برای این مشاور وجود ندارد.</div>}</section></main>}
