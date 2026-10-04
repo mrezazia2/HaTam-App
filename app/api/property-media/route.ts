@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { and, eq, like, ne } from "drizzle-orm";
 import { getDb } from "../../../db";
-import { properties, propertyMedia, propertyStatusHistory } from "../../../db/schema";
+import { properties, propertyMedia, propertyStatusHistory, urgentSaleRequests } from "../../../db/schema";
 import { writeAudit } from "../_lib/audit";
 import { getRequestAccount } from "../_lib/authorization";
 import { canManageProperty } from "../_lib/property-access";
@@ -47,10 +47,11 @@ export async function GET(request: Request) {
   const record = (await db.select().from(propertyMedia).where(and(eq(propertyMedia.objectKey, key), eq(propertyMedia.status, "active"))).limit(1))[0];
   if (!record) return new Response("Not found", { status: 404 });
   const property = record.propertyId ? (await db.select().from(properties).where(eq(properties.id, record.propertyId)).limit(1))[0] : null;
+  const urgentSale = record.urgentSaleId ? (await db.select().from(urgentSaleRequests).where(eq(urgentSaleRequests.id, record.urgentSaleId)).limit(1))[0] : null;
   const isPublic = property?.status === "published";
   if (!isPublic) {
     const account = await accountForMediaRequest(request);
-    if (!account || (account.role !== "admin" && account.id !== record.ownerAccountId && (!property || !canManageProperty(account, property)))) {
+    if (!account || (account.role !== "admin" && account.id !== record.ownerAccountId && (!property || !canManageProperty(account, property)) && urgentSale?.assignedConsultantId !== account.id)) {
       return new Response("Forbidden", { status: 403 });
     }
   }

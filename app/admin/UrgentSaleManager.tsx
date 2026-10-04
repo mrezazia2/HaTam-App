@@ -1,6 +1,45 @@
 "use client";
-import { useEffect,useMemo,useState } from "react";
-import { MagnifyingGlassIcon,PersonIcon,TrashIcon } from "@radix-ui/react-icons";
-import { deleteUrgentSale,fetchUrgentSalesData,readUrgentSales,updateUrgentSale,type UrgentSaleRequest,type UrgentSaleStatus } from "../mobile/urgent-sale-store";
 
-export default function UrgentSaleManager({notify}:{notify:(message:string)=>void}){const [items,setItems]=useState<UrgentSaleRequest[]>([]),[consultants,setConsultants]=useState<{id:string;name:string;mobile:string}[]>([]),[query,setQuery]=useState("");const load=()=>fetchUrgentSalesData().then(data=>{setItems(data.items);setConsultants(data.consultants)}).catch(()=>setItems(readUrgentSales()));useEffect(()=>{load()},[]);const update=async(id:string,patch:Partial<UrgentSaleRequest>&{assignedConsultantId?:string})=>{const previous=items;setItems(items.map(item=>item.id===id?{...item,...patch}:item));try{await updateUrgentSale(id,patch);notify("درخواست به‌روزرسانی شد.")}catch{setItems(previous);notify("ذخیره تغییرات انجام نشد.")}};const remove=async(id:string)=>{if(!window.confirm("این درخواست حذف شود؟"))return;try{await deleteUrgentSale(id);setItems(items.filter(row=>row.id!==id));notify("درخواست حذف شد.")}catch{notify("حذف درخواست انجام نشد.")}};const rows=useMemo(()=>items.filter(item=>`${item.firstName} ${item.lastName} ${item.address} ${item.id}`.includes(query.trim())),[items,query]);return <section className="urgent-admin"><div className="entity-toolbar"><label><MagnifyingGlassIcon/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="جست‌وجو با نام، آدرس یا شناسه درخواست..."/></label><span>{rows.length.toLocaleString("fa-IR")} درخواست</span></div><div className="urgent-admin-list">{rows.map(item=><article key={item.id}><header><div><b><PersonIcon/></b><span><strong>{item.firstName} {item.lastName}</strong><small>{item.id} · {new Date(item.createdAt).toLocaleString("fa-IR")}</small></span></div><select value={item.status} onChange={e=>update(item.id,{status:e.target.value as UrgentSaleStatus})}>{["جدید","در بررسی","ارجاع‌شده","تکمیل‌شده","ردشده"].map(status=><option key={status}>{status}</option>)}</select></header><div className="urgent-admin-facts"><span><small>آدرس</small><b>{item.address}</b></span><span><small>ملک</small><b>{item.area.toLocaleString("fa-IR")} متر · {item.bedrooms.toLocaleString("fa-IR")} خواب · سال {item.buildingAge.toLocaleString("fa-IR",{useGrouping:false})}</b></span><span><small>قیمت مدنظر</small><b>{item.expectedPrice.toLocaleString("fa-IR")} تومان</b></span><span><small>امکانات</small><b>{item.amenities.join("، ")||"—"}</b></span></div><div className="urgent-assignment"><label><span>ارجاع به مشاور</span><select value={item.assignedConsultant} onChange={e=>{const consultant=consultants.find(option=>option.name===e.target.value);update(item.id,{assignedConsultant:e.target.value,assignedConsultantId:consultant?.id||"",status:e.target.value?"ارجاع‌شده":item.status})}}><option value="">بدون ارجاع</option>{consultants.map(option=><option key={option.id} value={option.name}>{option.name} · {option.mobile}</option>)}</select></label><label><span>سطح دسترسی مشاور</span><select value={item.consultantAccess} onChange={e=>update(item.id,{consultantAccess:e.target.value as UrgentSaleRequest["consultantAccess"]})}><option>مشاهده</option><option>ویرایش</option><option>مدیریت کامل</option></select></label><label className="urgent-note"><span>یادداشت ادمین</span><input value={item.adminNote} onChange={e=>setItems(current=>current.map(row=>row.id===item.id?{...row,adminNote:e.target.value}:row))} onBlur={()=>update(item.id,{adminNote:item.adminNote})} placeholder="یادداشت داخلی یا دستور پیگیری..."/></label><button className="danger" onClick={()=>remove(item.id)}><TrashIcon/>حذف</button></div></article>)}{!rows.length&&<div className="entity-empty">هنوز درخواست فروش فوری ثبت نشده است.</div>}</div></section>}
+import { useEffect, useMemo, useState } from "react";
+import { MagnifyingGlassIcon, PersonIcon, ReloadIcon, TrashIcon } from "@radix-ui/react-icons";
+import { deleteUrgentSale, fetchUrgentSalesData, updateUrgentSale, type UrgentSaleRequest, type UrgentSaleStatus } from "../mobile/urgent-sale-store";
+
+type Consultant = { id: string; name: string; mobile: string };
+
+export default function UrgentSaleManager({ notify }: { notify: (message: string) => void }) {
+  const [items, setItems] = useState<UrgentSaleRequest[]>([]);
+  const [consultants, setConsultants] = useState<Consultant[]>([]);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const load = () => {
+    setLoading(true);
+    setError("");
+    fetchUrgentSalesData().then(data => { setItems(data.items); setConsultants(data.consultants); })
+      .catch(() => setError("دریافت درخواست‌ها از پایگاه داده انجام نشد؛ اطلاعات قدیمی نمایش داده نمی‌شود."))
+      .finally(() => setLoading(false));
+  };
+  useEffect(() => { load(); }, []);
+  const update = async (id: string, patch: Partial<UrgentSaleRequest> & { assignedConsultantId?: string }) => {
+    const previous = items;
+    setItems(current => current.map(item => item.id === id ? { ...item, ...patch } : item));
+    try { await updateUrgentSale(id, patch); notify("درخواست در پایگاه داده به‌روزرسانی شد."); }
+    catch { setItems(previous); notify("ذخیره تغییرات انجام نشد."); }
+  };
+  const remove = async (id: string) => {
+    if (!window.confirm("این درخواست حذف شود؟")) return;
+    try { await deleteUrgentSale(id); setItems(current => current.filter(item => item.id !== id)); notify("درخواست حذف شد."); }
+    catch { notify("حذف درخواست انجام نشد."); }
+  };
+  const rows = useMemo(() => items.filter(item => `${item.firstName} ${item.lastName} ${item.mobile || ""} ${item.address} ${item.id}`.includes(query.trim())), [items, query]);
+  return <section className="urgent-admin">
+    <div className="entity-toolbar"><label><MagnifyingGlassIcon /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="جست‌وجو با نام، موبایل، آدرس یا شناسه درخواست..." /></label><span>{rows.length.toLocaleString("fa-IR")} درخواست</span><button onClick={load} aria-label="به‌روزرسانی درخواست‌ها"><ReloadIcon /></button></div>
+    {error && <p className="urgent-admin-error" role="alert">{error}</p>}
+    <div className="urgent-admin-list">{rows.map(item => <article key={item.id}>
+      <header><div><b><PersonIcon /></b><span><strong>{item.firstName} {item.lastName}</strong><small>{item.id} · {new Date(item.createdAt).toLocaleString("fa-IR")} · {item.mobile || "بدون موبایل"}</small></span></div><select value={item.status} onChange={event => update(item.id, { status: event.target.value as UrgentSaleStatus })}>{["جدید", "در بررسی", "ارجاع‌شده", "تکمیل‌شده", "ردشده"].map(status => <option key={status}>{status}</option>)}</select></header>
+      <div className="urgent-admin-facts"><span><small>آدرس</small><b>{item.address}</b></span><span><small>ملک</small><b>{item.area.toLocaleString("fa-IR")} متر · {item.bedrooms.toLocaleString("fa-IR")} خواب · سال {item.buildingAge.toLocaleString("fa-IR", { useGrouping: false })}</b></span><span><small>قیمت مدنظر</small><b>{item.expectedPrice.toLocaleString("fa-IR")} تومان</b></span><span><small>امکانات</small><b>{item.amenities.join("، ") || "—"}</b></span></div>
+      {Boolean(item.media?.length) && <div className="urgent-admin-media"><strong>عکس و ویدیوهای مالک</strong><div>{item.media?.map(media => <a key={media.key} href={media.url} target="_blank" rel="noreferrer" aria-label={`مشاهده ${media.name}`}>{media.type.startsWith("image/") ? <img src={media.url} alt={media.name} /> : <span>▶ ویدیو</span>}<small>{media.name}</small></a>)}</div></div>}
+      <div className="urgent-assignment"><label><span>ارجاع به مشاور</span><select value={item.assignedConsultantId || ""} onChange={event => { const consultant = consultants.find(option => option.id === event.target.value); void update(item.id, { assignedConsultant: consultant?.name || "", assignedConsultantId: consultant?.id || "", status: consultant ? "ارجاع‌شده" : item.status }); }}><option value="">بدون ارجاع</option>{consultants.map(option => <option key={option.id} value={option.id}>{option.name} · {option.mobile}</option>)}</select></label><label><span>سطح دسترسی مشاور</span><select value={item.consultantAccess} onChange={event => update(item.id, { consultantAccess: event.target.value as UrgentSaleRequest["consultantAccess"] })}><option>مشاهده</option><option>ویرایش</option><option>مدیریت کامل</option></select></label><label className="urgent-note"><span>یادداشت ادمین</span><input value={item.adminNote} onChange={event => setItems(current => current.map(row => row.id === item.id ? { ...row, adminNote: event.target.value } : row))} onBlur={event => update(item.id, { adminNote: event.target.value })} placeholder="یادداشت داخلی یا دستور پیگیری..." /></label><button className="danger" onClick={() => remove(item.id)}><TrashIcon /> حذف</button></div>
+    </article>)}{loading && <div className="entity-empty">در حال دریافت درخواست‌ها از پایگاه داده…</div>}{!loading && !error && !rows.length && <div className="entity-empty">هنوز درخواست فروش فوری ثبت نشده است.</div>}</div>
+  </section>;
+}

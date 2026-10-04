@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       const mediaKeys = Array.from(new Set(Array.isArray(value.mediaKeys) ? value.mediaKeys.map(String) : [])).filter(Boolean), uploadSettings = await getUploadSettings();
       if (mediaKeys.length > uploadSettings.maxPropertyFiles) return invalid("تعداد فایل‌های رسانه از محدودیت تنظیمات بیشتر است.");
       const ownedMedia = mediaKeys.length ? await db.select().from(propertyMedia).where(and(inArray(propertyMedia.objectKey, mediaKeys), eq(propertyMedia.ownerAccountId, admin.id), eq(propertyMedia.status, "active"))) : [];
-      if (ownedMedia.length !== mediaKeys.length || ownedMedia.some(item => item.propertyId)) return invalid("یکی از فایل‌های بارگذاری‌شده معتبر یا متعلق به این حساب نیست.");
+      if (ownedMedia.length !== mediaKeys.length || ownedMedia.some(item => item.propertyId || item.urgentSaleId)) return invalid("یکی از فایل‌های بارگذاری‌شده معتبر یا متعلق به این حساب نیست.");
       const id = `HT-${crypto.randomUUID()}`;
       const amenities = [["parking", "پارکینگ"], ["elevator", "آسانسور"], ["storage", "انباری"]].filter(([key]) => value[key] === "yes").map(([, label]) => label);
       const description = JSON.stringify({ description: opt(value.description) || "", buildingYear: numNull(value.buildingYear), buildYear: numNull(value.buildingYear), floor: numNull(value.floor), floors: numNull(value.totalFloors), units: numNull(value.unitsPerFloor), facade: opt(value.facade), deedType: opt(value.deedType), occupancy: opt(value.occupancy), amenities, locationMode: value.locationMode === "area" ? "area" : "point", locationRadius: Math.min(1000, Math.max(100, num(value.locationRadius) || 300)) });

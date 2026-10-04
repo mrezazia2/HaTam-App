@@ -77,7 +77,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const newKeys = requestedKeys.filter(key => !currentKeys.has(key));
   if (newKeys.length) {
     const uploaded = await db.select().from(propertyMedia).where(and(inArray(propertyMedia.objectKey, newKeys), eq(propertyMedia.ownerAccountId, account.id), eq(propertyMedia.status, "active")));
-    if (uploaded.length !== newKeys.length || uploaded.some(item => item.propertyId && item.propertyId !== id)) {
+    if (uploaded.length !== newKeys.length || uploaded.some(item => item.urgentSaleId || (item.propertyId && item.propertyId !== id))) {
       return Response.json({ ok: false, error: "INVALID_MEDIA_OWNERSHIP" }, { status: 403 });
     }
   }

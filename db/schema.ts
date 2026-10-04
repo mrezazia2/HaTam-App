@@ -19,8 +19,8 @@ export const propertyStatusHistory=sqliteTable("property_status_history",{
 },table=>[index("idx_property_history_property_created").on(table.propertyId,table.createdAt)]);
 
 export const propertyMedia=sqliteTable("property_media",{
- id:text("id").primaryKey(),objectKey:text("object_key").notNull(),ownerAccountId:text("owner_account_id").notNull(),propertyId:text("property_id"),fileName:text("file_name").notNull(),contentType:text("content_type").notNull(),size:integer("size").notNull(),status:text("status",{enum:["active","deleted"]}).notNull().default("active"),...timestamps,
-},table=>[uniqueIndex("uq_property_media_object_key").on(table.objectKey),index("idx_property_media_owner_created").on(table.ownerAccountId,table.createdAt),index("idx_property_media_property_status").on(table.propertyId,table.status)]);
+ id:text("id").primaryKey(),objectKey:text("object_key").notNull(),ownerAccountId:text("owner_account_id").notNull(),propertyId:text("property_id"),urgentSaleId:text("urgent_sale_id"),fileName:text("file_name").notNull(),contentType:text("content_type").notNull(),size:integer("size").notNull(),status:text("status",{enum:["active","deleted"]}).notNull().default("active"),...timestamps,
+},table=>[uniqueIndex("uq_property_media_object_key").on(table.objectKey),index("idx_property_media_owner_created").on(table.ownerAccountId,table.createdAt),index("idx_property_media_property_status").on(table.propertyId,table.status),index("idx_property_media_urgent_sale_status").on(table.urgentSaleId,table.status)]);
 
 export const contentPages=sqliteTable("content_pages",{
  id:text("id").primaryKey(),title:text("title").notNull(),slug:text("slug").notNull().unique(),target:text("target",{enum:["site","app"]}).notNull(),status:text("status",{enum:["draft","published"]}).notNull().default("draft"),seoTitle:text("seo_title"),seoDescription:text("seo_description"),...timestamps,
