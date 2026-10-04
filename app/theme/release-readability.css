@@ -11,6 +11,28 @@
 
 .hatam-app {font-size:calc(16px * var(--brand-type-scale,1));line-height:1.7}
 .hatam-app :is(input,select,textarea) {font-size:16px!important;line-height:1.6;color:var(--theme-text)!important;background-color:var(--theme-surface-2)!important;-webkit-text-fill-color:var(--theme-text)!important;min-height:44px}
+/* Composite fields provide their own touch-sized border. An inner 44px input
+   used to spill over the label and unit after values were entered. */
+.hatam-app :is(.dual-fields,.triple-fields,.wide-text-field,.price-text-field) :is(input,select) {min-width:0;min-height:0!important;border:0;background-color:transparent!important;box-shadow:none!important}
+.hatam-app .dual-fields input {height:100%;padding:0!important}
+.hatam-app .dual-fields select {height:100%;padding:0 4px;background:transparent!important}
+.hatam-app .price-range-fields>label {height:66px;grid-template-columns:1fr auto;grid-template-rows:18px 30px;align-content:center;row-gap:0}
+.hatam-app .price-range-fields span {grid-column:1;grid-row:1}
+.hatam-app .price-range-fields small {grid-column:2;grid-row:1}
+.hatam-app .price-range-fields input {grid-column:1/-1;grid-row:2;height:30px!important;font-size:14px!important;text-align:right}
+.hatam-app .urgent-page .text-fields>label {height:auto;min-height:66px;align-items:stretch}
+.hatam-app .urgent-page .text-fields input {height:28px;flex:0 0 28px;text-align:right}
+.hatam-app .urgent-page .wide-text-field {height:auto;min-height:66px}
+.hatam-app .urgent-page .wide-text-field input {height:28px;padding:0!important;text-align:right}
+.hatam-app .urgent-page .triple-fields label {height:auto;min-height:72px;grid-template-rows:auto minmax(28px,1fr)}
+.hatam-app .urgent-page .triple-fields input {height:28px;padding:0!important;align-self:end}
+.hatam-app .urgent-page .price-text-field>div {min-width:0}
+.hatam-app .urgent-page .price-text-field input {height:100%;padding:0!important;flex:1;text-align:right}
+.hatam-app :is(.dual-fields>label,.triple-fields label,.wide-text-field,.price-text-field>div):focus-within {border-color:var(--brand-accent,#d7ae58);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand-accent,#d7ae58) 38%,transparent)}
+.hatam-app :is(.dual-fields,.triple-fields,.wide-text-field,.price-text-field) :is(input,select):focus-visible {outline:0!important}
+.hatam-app input[inputmode="numeric"] {direction:ltr}
+.hatam-app .urgent-page .triple-fields input {text-align:center}
+@media (max-width:360px) {.hatam-app .urgent-page .triple-fields label span {font-size:11px;white-space:nowrap}}
 .hatam-app :is(.home-tagline,.filter-card>p,.field-caption,.select-label>span,.urgent-intro span) {font-size:14px}
 .hatam-app :is(.filter-card h2,.submit-form-card h2,.archive-copy h2) {font-size:16px}
 .hatam-app :is(.dual-fields span,.dual-fields small,.triple-fields label span,.triple-fields small,.counter-card>span,.text-fields label span,.wide-text-field span,.submit-grid label>span) {font-size:13px}
