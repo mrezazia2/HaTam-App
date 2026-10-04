@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.env*
+.dev.vars*
+.wrangler
+.sites-runtime
+data
+outputs
+*.log
+*.tar.gz
+implementation-*.png
+*-implementation*.png

@@ -1,0 +1,51 @@
+{
+  email {$CADDY_EMAIL}
+}
+
+(hatam_backend) {
+  encode zstd gzip
+  request_body {
+    max_size 105MB
+  }
+  header X-Content-Type-Options nosniff
+  header Referrer-Policy strict-origin-when-cross-origin
+  header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  header X-Frame-Options SAMEORIGIN
+  header Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+  header -Server
+  log {
+    output stdout
+    format json
+  }
+  reverse_proxy app:3000 {
+    flush_interval -1
+  }
+}
+
+www.hatamestate.com {
+  redir https://hatamestate.com{uri} permanent
+}
+
+{$APP_DOMAIN:hatamestate.com} {
+  import hatam_backend
+}
+web.hatamestate.com, app.hatamestate.com {
+  redir / /app 302
+  import hatam_backend
+}
+admin.hatamestate.com {
+  redir / /admin 302
+  import hatam_backend
+}
+consultant.hatamestate.com {
+  redir / /consultant 302
+  import hatam_backend
+}
+agency.hatamestate.com {
+  redir / /agency 302
+  import hatam_backend
+}
+panel.hatamestate.com {
+  redir / /panel 302
+  import hatam_backend
+}

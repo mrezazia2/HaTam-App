@@ -47,7 +47,9 @@ function getDeviceScale(deviceWidth: number, deviceHeight: number) {
 }
 
 function useDeviceScale(deviceWidth: number, deviceHeight: number) {
-  const [scale, setScale] = useState(() => getDeviceScale(deviceWidth, deviceHeight));
+  // Keep the server and the first client render identical. Viewport-dependent
+  // sizing is applied immediately after hydration and on later resizes.
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
     const update = () => setScale(getDeviceScale(deviceWidth, deviceHeight));

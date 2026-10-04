@@ -1,0 +1,22 @@
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN node scripts/vps.mjs build
+
+FROM node:24-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production HATAM_RUNTIME=vps HATAM_DATA_DIR=/app/data
+COPY package*.json ./
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+COPY --from=build --chown=node:node /app/dist ./dist
+COPY --from=build --chown=node:node /app/public ./public
+COPY --from=build --chown=node:node /app/drizzle ./drizzle
+COPY --from=build --chown=node:node /app/runtime ./runtime
+COPY --from=build --chown=node:node /app/scripts ./scripts
+COPY --from=build --chown=node:node /app/node_modules/vinext/dist ./vendor/vinext/dist
+RUN mkdir -p /app/data && chown node:node /app/data
+USER node
+EXPOSE 3000
+CMD ["node", "scripts/vps.mjs", "start", "--hostname", "0.0.0.0", "--port", "3000"]

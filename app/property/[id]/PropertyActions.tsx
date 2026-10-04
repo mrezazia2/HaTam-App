@@ -28,9 +28,8 @@ export default function PropertyActions({ propertyId, notify }: { propertyId: st
       const result = await response.json().catch(() => ({}));
       if (response.status === 401) { window.location.assign(`/login/user?returnTo=${encodeURIComponent(`/property/${propertyId}`)}`); return; }
       if (!response.ok) throw new Error(result.error || "REQUEST_FAILED");
-      const communication = await fetch("/api/communications/bootstrap", { method: "POST", headers, body: JSON.stringify({ eventType: action, eventId: result.id }) });
       setAction(null); setNotes("");
-      notify(communication.ok ? action === "visit" ? "درخواست بازدید، گفت‌وگو و یادآوری ثبت شد." : "درخواست مشاوره، گفت‌وگو و یادآوری ثبت شد." : "درخواست ثبت شد؛ ایجاد یادآوری نیازمند بررسی است.");
+      notify(action === "visit" ? "درخواست بازدید، گفت‌وگو و یادآوری ثبت شد." : "درخواست مشاوره، گفت‌وگو و یادآوری ثبت شد.");
     } catch (error) { const key = error instanceof Error ? error.message : ""; notify(key === "INVALID_SCHEDULE" ? "زمانی در آینده انتخاب کنید." : key === "PROPERTY_NOT_AVAILABLE" ? "این فایل دیگر برای ثبت درخواست در دسترس نیست." : "ثبت درخواست انجام نشد؛ دوباره تلاش کنید."); }
     finally { setBusy(null); }
   };

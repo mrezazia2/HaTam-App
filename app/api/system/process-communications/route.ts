@@ -1,14 +1,16 @@
+import {localPreviewHost} from "../../../auth/local-preview";
 import { env } from "cloudflare:workers";
 import { and,eq,isNull,lt,lte,or } from "drizzle-orm";
 import { getDb } from "../../../../db";
 import { accounts,auditLogs,communicationPolicies,communicationTemplates,integrationSettings,notifications,reminders,smsOutbox,subscriptionPlans,subscriptions } from "../../../../db/schema";
 import { decryptSecret } from "../../_lib/secrets";
+import {sendSms,SmsSendError} from "../../_lib/sms-provider";
 
 export const dynamic="force-dynamic";
 const DEFAULT_LOCK_SECONDS=300;
 
 export async function POST(request:Request){
- const host=new URL(request.url).hostname,local=host==="localhost"||host==="127.0.0.1",secret=(env as unknown as Record<string,string>).AUTOMATION_SECRET;
+ const host=new URL(request.url).hostname,local=localPreviewHost(host),secret=(env as unknown as Record<string,string>).AUTOMATION_SECRET;
  if(!local&&(!secret||request.headers.get("authorization")!==`Bearer ${secret}`))return Response.json({ok:false,error:"FORBIDDEN"},{status:403});
  const db=getDb(),now=new Date(),smsConfig=(await db.select().from(integrationSettings).where(eq(integrationSettings.category,"sms")).limit(1))[0],config=smsConfig?.publicConfig||{},lockSeconds=bounded(config.lockTimeoutSeconds,DEFAULT_LOCK_SECONDS,60,3600),staleAt=new Date(now.getTime()-lockSeconds*1000),batchSize=bounded(config.batchSize,100,1,250);
  await db.update(reminders).set({status:"pending",lockedAt:null,lockToken:null}).where(and(eq(reminders.status,"processing"),lt(reminders.lockedAt,staleAt)));
@@ -26,7 +28,7 @@ export async function POST(request:Request){
  let sent=0,failed=0,retryQueued=0;
  if(smsConfig?.enabled&&smsConfig.encryptedSecret&&config.baseUrl){const token=await decryptSecret(smsConfig.encryptedSecret),maxAttempts=bounded(config.maxAttempts,3,1,10),retryMinutes=parseRetryMinutes(config.retryMinutes),queued=await db.select().from(smsOutbox).where(and(eq(smsOutbox.status,"pending"),or(isNull(smsOutbox.nextAttemptAt),lte(smsOutbox.nextAttemptAt,now)))).limit(batchSize);
   for(const item of queued){const lockToken=crypto.randomUUID();await db.update(smsOutbox).set({status:"processing",lockedAt:now,lockToken}).where(and(eq(smsOutbox.id,item.id),eq(smsOutbox.status,"pending")));const claimed=(await db.select({id:smsOutbox.id}).from(smsOutbox).where(and(eq(smsOutbox.id,item.id),eq(smsOutbox.lockToken,lockToken))).limit(1))[0];if(!claimed)continue;
-   try{if(item.accountId&&!await smsAllowed(db,item.accountId,now))throw new PermanentSmsError("ADMIN_OR_VIP_POLICY_BLOCKED");const template=resolveTemplate(item.template,config),headers:Record<string,string>={"content-type":config.contentType||"application/json"},authHeader=config.authHeader||"Authorization";headers[authHeader]=`${config.authPrefix??"Bearer "}${token}`;const payload:Record<string,unknown>={...item.payload};payload[config.receptorField||"receptor"]=item.mobile;payload[config.senderField||"sender"]=config.sender||"";payload[config.templateField||"template"]=template;const response=await fetch(config.baseUrl,{method:config.apiMethod==="PUT"?"PUT":"POST",headers,body:JSON.stringify(payload),signal:AbortSignal.timeout(Math.min(60000,Math.max(1000,Number(config.timeoutMs)||15000)))});if(!response.ok)throw new Error(`HTTP_${response.status}`);await db.update(smsOutbox).set({status:"sent",attempts:item.attempts+1,sentAt:now,lastError:null,nextAttemptAt:null,lockedAt:null,lockToken:null}).where(and(eq(smsOutbox.id,item.id),eq(smsOutbox.lockToken,lockToken)));await db.insert(auditLogs).values(audit("sms.sent",item.accountId,item.id,"پیامک عملیاتی با موفقیت ارسال شد.",{template,provider:smsConfig.provider}));sent++}
+   try{if(item.accountId&&!await smsAllowed(db,item.accountId,now))throw new PermanentSmsError("ADMIN_OR_VIP_POLICY_BLOCKED");const template=resolveTemplate(item.template,config),result=await sendSms({config,provider:smsConfig.provider,token,mobile:item.mobile,pattern:template,variables:item.payload as Record<string,unknown>});if(!result.ok)throw new SmsSendError(result);await db.update(smsOutbox).set({status:"sent",attempts:item.attempts+1,sentAt:now,lastError:null,nextAttemptAt:null,lockedAt:null,lockToken:null}).where(and(eq(smsOutbox.id,item.id),eq(smsOutbox.lockToken,lockToken)));await db.insert(auditLogs).values(audit("sms.sent",item.accountId,item.id,"پیامک عملیاتی با موفقیت ارسال شد.",{template,provider:smsConfig.provider,status:result.status}));sent++}
    catch(error){const attempts=item.attempts+1,permanent=error instanceof PermanentSmsError,exhausted=attempts>=maxAttempts,nextAttemptAt=!permanent&&!exhausted?new Date(now.getTime()+retryMinutes[Math.min(attempts-1,retryMinutes.length-1)]*60000):null,status=permanent||exhausted?"failed" as const:"pending" as const;await db.update(smsOutbox).set({status,attempts,lastError:errorText(error),nextAttemptAt,lockedAt:null,lockToken:null}).where(and(eq(smsOutbox.id,item.id),eq(smsOutbox.lockToken,lockToken)));await db.insert(auditLogs).values(audit(status==="failed"?"sms.failed":"sms.retry_scheduled",item.accountId,item.id,status==="failed"?"ارسال پیامک پس از تلاش‌های مجاز ناموفق ماند.":"تلاش مجدد پیامک زمان‌بندی شد.",{attempts,nextAttemptAt:nextAttemptAt?.toISOString()||null,error:errorText(error)}));status==="failed"?failed++:retryQueued++}
   }
  }

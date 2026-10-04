@@ -1,0 +1,27 @@
+/* Keep the mobile login readable at actual handset width in both themes. */
+.hatam-app .app-login-page {display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}
+.hatam-app .app-login-page .app-password-login {position:relative;inset:auto;z-index:auto;width:100%;margin-top:16px}
+.hatam-app .app-login-card > span {font-size:12px}
+.hatam-app .app-login-card h1 {font-size:clamp(21px,6vw,24px);line-height:1.45}
+.hatam-app .app-login-card > p {font-size:13px;line-height:1.7}
+.hatam-app .app-login-roles {gap:7px;margin:18px 0 16px}
+.hatam-app .app-login-roles button {min-height:52px;padding:6px 4px;font-size:12px;line-height:1.35}
+.hatam-app .app-login-field {font-size:12px;gap:8px}
+.hatam-app .app-login-field small {font-size:12px}
+.hatam-app .app-login-submit {min-height:50px;font-size:14px}
+.hatam-app :is(.app-login-change,.app-login-mode) {min-height:44px;padding:8px 10px;font-size:12px}
+.hatam-app .app-login-message {font-size:13px;line-height:1.6}
+.hatam-app .app-password-trigger {min-height:64px;font-size:14px}
+.hatam-app :is(.app-password-trigger small,.app-password-card small) {font-size:12px}
+.hatam-app .app-password-roles button {min-height:44px;font-size:12px}
+.hatam-app .app-password-card label {font-size:13px}
+.hatam-app .app-password-card p {font-size:12px}
+.hatam-app .app-password-submit {min-height:48px;font-size:14px}
+html[data-theme="light"] .hatam-app .app-login-card > span,
+html[data-theme="light"] .hatam-app .app-login-mode {color:#805b16}
+html[data-theme="light"] .hatam-app .app-login-roles button.active {color:#102e25;border-color:#a57928;background:#e4bd66;box-shadow:inset 0 0 0 1px #a57928}
+html[data-theme="dark"] .hatam-app .app-login-roles button.active {color:#102e25;border-color:#d7ae58;background:#dfbd66}
+@media (max-width:360px) {
+  .hatam-app .app-login-card {padding:19px 12px}
+  .hatam-app .app-login-roles button {font-size:11px}
+}

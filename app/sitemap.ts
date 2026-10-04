@@ -4,7 +4,7 @@ import { getDb } from "../db";
 import { contentPages, properties } from "../db/schema";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = "https://hatamestate.ir";
+  const base = "https://hatamestate.com";
   const [propertyRows, pageRows] = await Promise.all([
     getDb().select({ id: properties.id, updatedAt: properties.updatedAt }).from(properties).where(eq(properties.status, "published")),
     getDb().select({ slug: contentPages.slug, updatedAt: contentPages.updatedAt }).from(contentPages).where(eq(contentPages.status, "published")),

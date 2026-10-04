@@ -30,11 +30,16 @@ import { ThemeProvider } from "./theme/ThemeProvider";
 import PasswordFallback from "./auth/PasswordFallback";
 import PasswordSetupPrompt from "./auth/PasswordSetupPrompt";
 import "./auth/password-setup.css";
+import "./theme/release-readability.css";
+import "./theme/ui-overrides.css";
+import "./pwa/pwa.css";
+import PwaInstallPrompt from "./pwa/PwaInstallPrompt";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://hatamestate.ir"),
+  metadataBase: new URL("https://hatamestate.com"),
   title: "املاک حاتم | انتخاب مطمئن برای خرید و اجاره ملک",
   description: "فایل‌های تاییدشده، مشاوره اختصاصی و جست‌وجوی هوشمند ملک در تهران با املاک حاتم.",
+  manifest: "/manifest.webmanifest",
   other: {
     "codex-preview": "development",
   },
@@ -58,7 +63,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl">
-      <body><ThemeProvider><BrandProvider>{presentationMode() && <nav aria-label="نسخه نمایشی" style={{padding:12,background:"#073126",color:"white",display:"flex",gap:16,flexWrap:"wrap",position:"relative",zIndex:10000}}><span>نسخه نمایشی · فقط مشاهده</span>{[["/","سایت"],["/app","اپ"],["/panel","مشتری"],["/consultant","مشاور"],["/agency","آژانس"],["/admin","ادمین"]].map(([href,label])=><a key={href} href={href} style={{color:"#f4dfaa"}}>{label}</a>)}</nav>}{children}{!presentationMode() && <><PasswordFallback/><PasswordSetupPrompt/></>}</BrandProvider></ThemeProvider></body>
+      <body><ThemeProvider><BrandProvider>{presentationMode() && <nav aria-label="نسخه نمایشی" style={{padding:12,background:"#073126",color:"white",display:"flex",gap:16,flexWrap:"wrap",position:"relative",zIndex:10000}}><span>نسخه نمایشی · فقط مشاهده</span>{[["/","سایت"],["/app","اپ"],["/panel","مشتری"],["/consultant","مشاور"],["/agency","آژانس"],["/admin","ادمین"]].map(([href,label])=><a key={href} href={href} style={{color:"#f4dfaa"}}>{label}</a>)}</nav>}{children}{!presentationMode() && <><PasswordFallback/><PasswordSetupPrompt/><PwaInstallPrompt/></>}</BrandProvider></ThemeProvider></body>
     </html>
   );
 }

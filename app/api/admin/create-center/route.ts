@@ -1,6 +1,7 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "../../../../db";
-import { accounts, agencies, properties, propertyRequests } from "../../../../db/schema";
+import { accounts, agencies, properties, propertyMedia, propertyRequests } from "../../../../db/schema";
+import { getUploadSettings } from "../../_lib/upload-settings";
 import { forbidden, requireAdmin } from "../../_lib/authorization";
 import { writeAudit } from "../../_lib/audit";
 
@@ -46,8 +47,16 @@ export async function POST(request: Request) {
       if (ownerAccountId && !(await existsAccount(ownerAccountId, "user"))) return invalid("مالک انتخاب‌شده معتبر نیست.");
       if (consultantAccountId && !(await existsAccount(consultantAccountId, "consultant"))) return invalid("مشاور انتخاب‌شده معتبر نیست.");
       if (agencyId && !(await existsAgency(agencyId))) return invalid("آژانس انتخاب‌شده معتبر نیست.");
+      const mediaKeys = Array.from(new Set(Array.isArray(value.mediaKeys) ? value.mediaKeys.map(String) : [])).filter(Boolean), uploadSettings = await getUploadSettings();
+      if (mediaKeys.length > uploadSettings.maxPropertyFiles) return invalid("تعداد فایل‌های رسانه از محدودیت تنظیمات بیشتر است.");
+      const ownedMedia = mediaKeys.length ? await db.select().from(propertyMedia).where(and(inArray(propertyMedia.objectKey, mediaKeys), eq(propertyMedia.ownerAccountId, admin.id), eq(propertyMedia.status, "active"))) : [];
+      if (ownedMedia.length !== mediaKeys.length || ownedMedia.some(item => item.propertyId)) return invalid("یکی از فایل‌های بارگذاری‌شده معتبر یا متعلق به این حساب نیست.");
       const id = `HT-${crypto.randomUUID()}`;
-      await db.insert(properties).values({ id, title, ownerAccountId, consultantAccountId, agencyId, ownerMobile, address, district: opt(value.district), latitude: numNull(value.latitude), longitude: numNull(value.longitude), transactionType: value.transactionType === "rent" ? "rent" : value.transactionType === "presale" ? "presale" : "sale", propertyType: req(value.propertyType) || "apartment", area: num(value.area), bedrooms: num(value.bedrooms), price: num(value.price), description: opt(value.description) || "", coverImage: null, status: "pending", featured: false, createdAt: now, updatedAt: now });
+      const amenities = [["parking", "پارکینگ"], ["elevator", "آسانسور"], ["storage", "انباری"]].filter(([key]) => value[key] === "yes").map(([, label]) => label);
+      const description = JSON.stringify({ description: opt(value.description) || "", buildingYear: numNull(value.buildingYear), buildYear: numNull(value.buildingYear), floor: numNull(value.floor), floors: numNull(value.totalFloors), units: numNull(value.unitsPerFloor), facade: opt(value.facade), deedType: opt(value.deedType), occupancy: opt(value.occupancy), amenities, locationMode: value.locationMode === "area" ? "area" : "point", locationRadius: Math.min(1000, Math.max(100, num(value.locationRadius) || 300)) });
+      const cover = ownedMedia.find(item => item.contentType.startsWith("image/"));
+      await db.insert(properties).values({ id, title, ownerAccountId, consultantAccountId, agencyId, ownerMobile, address, district: opt(value.district), latitude: numNull(value.latitude), longitude: numNull(value.longitude), transactionType: value.transactionType === "rent" ? "rent" : value.transactionType === "presale" ? "presale" : "sale", propertyType: req(value.propertyType) || "apartment", area: num(value.area), bedrooms: num(value.bedrooms), price: num(value.price), description, coverImage: cover ? `/api/property-media?key=${encodeURIComponent(cover.objectKey)}` : null, status: "pending", featured: false, createdAt: now, updatedAt: now });
+      if (mediaKeys.length) await db.update(propertyMedia).set({ propertyId: id, updatedAt: now }).where(and(inArray(propertyMedia.objectKey, mediaKeys), eq(propertyMedia.ownerAccountId, admin.id)));
       await writeAudit(db, admin, "property.create", "property", id, "ملک جدید توسط ادمین ثبت شد.", { title, ownerAccountId, consultantAccountId });
       return Response.json({ ok: true, id }, { status: 201 });
     }

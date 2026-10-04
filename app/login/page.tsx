@@ -1,2 +1,3 @@
 import { AuthRoleSelection } from "../auth/AuthExperience";
-export default function LoginPage(){return <AuthRoleSelection mode="login"/>}
+import PublicSiteHeader from "../site/PublicSiteHeader";
+export default function LoginPage(){return <><PublicSiteHeader/><AuthRoleSelection mode="login"/></>}

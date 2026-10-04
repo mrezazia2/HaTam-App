@@ -11,6 +11,7 @@ const roleLabel:Record<string,string>={user:"کاربر",consultant:"مشاور"
 
 export default function CommunicationsDock({role}:{role:Role}){
  const [open,setOpen]=useState<"chat"|"notifications"|null>(null),[conversations,setConversations]=useState<Conversation[]>([]),[selected,setSelected]=useState(""),[messages,setMessages]=useState<Message[]>([]),[notices,setNotices]=useState<Notice[]>([]),[unread,setUnread]=useState(0),[text,setText]=useState(""),[error,setError]=useState("");
+ useEffect(()=>{const show=()=>setOpen("notifications");window.addEventListener("hatam:open-notifications",show);return()=>window.removeEventListener("hatam:open-notifications",show)},[]);
  const messagesEnd=useRef<HTMLDivElement|null>(null),headers={"x-hatam-preview-role":role};
  const load=()=>{fetch("/api/chat",{headers,cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject()).then(x=>setConversations(x.items||[])).catch(()=>{});fetch("/api/notifications",{headers,cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject()).then(x=>{setNotices(x.items||[]);setUnread(x.unread||0)}).catch(()=>{})};
  const loadMessages=()=>{if(!selected)return;fetch(`/api/chat?conversationId=${encodeURIComponent(selected)}`,{headers,cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject()).then(x=>{setMessages(x.items||[]);load()}).catch(()=>{})};

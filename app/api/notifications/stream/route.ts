@@ -15,9 +15,9 @@ export async function GET(request:Request){
  const stream=new ReadableStream<Uint8Array>({
   async start(controller){
    let signature="";const started=Date.now();
-   controller.enqueue(encoder.encode("retry: 1000\nevent: ready\ndata: {}\n\n"));
+
    while(!stopped&&Date.now()-started<25_000){
-    try{const items=await getDb().select({id:notifications.id,readAt:notifications.readAt}).from(notifications).where(eq(notifications.accountId,account.id)).orderBy(desc(notifications.createdAt)).limit(50);const next=`${items[0]?.id||""}:${items.filter(item=>!item.readAt).length}:${items[0]?.readAt?.getTime()||0}`;if(signature&&next!==signature)controller.enqueue(encoder.encode(`event: notification\ndata: ${JSON.stringify({changed:true})}\n\n`));signature=next}
+    try{const items=await getDb().select({id:notifications.id,readAt:notifications.readAt}).from(notifications).where(eq(notifications.accountId,account.id)).orderBy(desc(notifications.createdAt)).limit(50);const next=`${items[0]?.id||""}:${items.filter(item=>!item.readAt).length}:${items[0]?.readAt?.getTime()||0}`;if(!signature)controller.enqueue(encoder.encode("retry: 1000\nevent: ready\ndata: {}\n\n"));if(signature&&next!==signature)controller.enqueue(encoder.encode(`event: notification\ndata: ${JSON.stringify({changed:true})}\n\n`));signature=next}
     catch{controller.enqueue(encoder.encode("event: heartbeat\ndata: {}\n\n"))}
     await new Promise(resolve=>setTimeout(resolve,750));
    }

@@ -1,6 +1,8 @@
 import { and, eq, ne } from "drizzle-orm";
+import { env } from "cloudflare:workers";
+import { walletCreditStatements } from "../../_lib/wallet-credit";
 import { getDb } from "../../../../db";
-import { paymentIntents, subscriptionPlans, subscriptions, walletTransactions } from "../../../../db/schema";
+import { paymentIntents, subscriptionPlans, subscriptions } from "../../../../db/schema";
 import { writeAudit } from "../../_lib/audit";
 import { paymentResultForStatus, sanitizePaymentCallback } from "../../_lib/payment-callback";
 import { verifyGatewayPayment } from "../../_lib/payment-gateway";
@@ -44,10 +46,13 @@ export async function GET(request: Request) {
     }
 
     if (intent.purpose === "wallet_topup") {
-      await db.batch([
-        db.insert(walletTransactions).values({ id: `WT-${crypto.randomUUID()}`, walletId: intent.walletId, type: "credit", amount: intent.amount, status: "completed", reference: `payment:${intent.id}`, description: "افزایش موجودی از درگاه آنلاین", createdAt: now }),
-        db.update(paymentIntents).set({ status: "paid", providerReference: verified.reference, callbackPayload: callback, verifiedAt: now, updatedAt: now }).where(eq(paymentIntents.id, intent.id)),
-      ]);
+      const statements = walletCreditStatements({kind:"payment",id:intent.id,actorId:intent.accountId,actorRole:"system",now:now.getTime(),transactionId:`WT-${crypto.randomUUID()}`,auditId:`AUD-${crypto.randomUUID()}`,reference:verified.reference,callback});
+      const result = await env.DB.batch(statements.map(s=>env.DB.prepare(s.sql).bind(...s.values)));
+      if (result[0].meta.changes !== 1) {
+        const current = (await db.select().from(paymentIntents).where(eq(paymentIntents.id,intent.id)).limit(1))[0];
+        if(current?.status !== "paid") throw new Error("WALLET_CREDIT_NOT_APPLIED");
+      }
+      return redirect(url,"success",intent.id);
     } else {
       const subscription = (await db.select().from(subscriptions).where(eq(subscriptions.id, intent.referenceId || "")).limit(1))[0];
       const plan = subscription ? (await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, subscription.planId)).limit(1))[0] : null;

@@ -21,7 +21,6 @@ import {
   GearIcon,
   HeartFilledIcon,
   HeartIcon,
-  HamburgerMenuIcon,
   HomeIcon,
   IdCardIcon,
   MagicWandIcon,
@@ -33,6 +32,7 @@ import {
 } from "@radix-ui/react-icons";
 import { useBrand } from "./brand/BrandProvider";
 import { defaultFilterConfig, fetchFilterConfig } from "./mobile/filter-config";
+import PublicSiteHeader from "./site/PublicSiteHeader";
 
 const demoProperties = [
   { id: 1, badge: "ویژه", image: "/assets/hatam/luxury-living.webp", title: "آپارتمان لوکس نیاوران", meta: "۱۰۰ متر / ۲ خواب", area: "نیاوران، کامرانیه", district: "منطقه ۱", neighborhood: "نیاوران", kind: "آپارتمان", size: 100, priceValue: 9300, price: "۹,۳۰۰ میلیارد تومان" },
@@ -63,7 +63,7 @@ function Brand() {
 function PropertyCard({ property, favorite, onFavorite, onOpen }) {
   return (
     <article className="listing-card">
-      <button className="listing-open" onClick={onOpen} aria-label={`مشاهده ${property.title}`} />
+      {onOpen ? <button className="listing-open" onClick={onOpen} aria-label={`مشاهده ${property.title}`} /> : <a className="listing-open" href={`/property/${encodeURIComponent(property.id)}`} aria-label={`مشاهده جزئیات ${property.title}`} />}
       <div className="listing-image">
         <img src={property.image} alt={property.title} />
         <span>{property.badge}</span>
@@ -78,28 +78,28 @@ function PropertyCard({ property, favorite, onFavorite, onOpen }) {
   );
 }
 
-function Header({ onPanel }) {
-  const [account, setAccount] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  useEffect(() => { fetch("/api/auth/session", { cache: "no-store" }).then((response) => response.json()).then((data) => setAccount(data.account || null)).catch(() => setAccount(null)); }, []);
-  return (
-    <header className="site-header" dir="rtl">
-      <div className="header-inner">
-        {account ? <div className="account-box"><img src="/assets/hatam/advisor.webp" alt={account.name} /><button onClick={onPanel}><strong>سلام، {account.name}</strong><span>مشاهده پنل</span></button></div> : <button className="guest-login" onClick={() => go("/login")}><PersonIcon /> ورود / ثبت‌نام</button>}
-        <div className="header-actions"><button aria-label="اعلان‌ها" onClick={() => go("/panel")}><BellIcon /></button><button aria-label="علاقه‌مندی‌ها" onClick={() => go("/panel")}><HeartIcon /></button></div>
-        <button className="site-menu-toggle" aria-label={menuOpen ? "بستن منوی سایت" : "بازکردن منوی سایت"} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <Cross2Icon /> : <HamburgerMenuIcon />}</button>
-        <nav className={menuOpen ? "open" : ""} aria-label="منوی اصلی">
-          <button className="active" onClick={() => go("/")}>خانه</button>
-          <button onClick={() => document.querySelector(".smart-search")?.scrollIntoView({ behavior: "smooth" })}>جست‌وجو</button>
-          <button onClick={() => document.querySelector(".featured")?.scrollIntoView({ behavior: "smooth" })}>فایل‌ها</button>
-          <button onClick={() => go("/consultants")}>مشاوران</button>
-          <button onClick={() => go("/content/blog")}>وبلاگ</button>
-          {!account && <button onClick={() => go("/login")}>ورود / ثبت‌نام</button>}
-        </nav>
-        <Brand />
-      </div>
-    </header>
-  );
+function LocationFilterDialog({ open, onClose, config, filters, setFilters }) {
+  const closeRef = useRef(null);
+  const [activeRegionId, setActiveRegionId] = useState("");
+  useEffect(() => { if (!open) return; const handler = e => e.key === "Escape" && onClose(); document.addEventListener("keydown", handler); window.setTimeout(() => closeRef.current?.focus(), 0); return () => document.removeEventListener("keydown", handler); }, [open, onClose]);
+  useEffect(() => { if (open && !activeRegionId) setActiveRegionId(config.regions[0]?.id || ""); }, [open, activeRegionId, config.regions]);
+  if (!open) return null;
+  const selectedRegion = config.regions.find(region => region.id === activeRegionId) || config.regions[0];
+  const selectedNeighborhoods = filters.neighborhoods || [];
+  const removeNeighborhood = (item) => setFilters(current => {
+    const neighborhoods = (current.neighborhoods || []).filter(value => value !== item);
+    const regions = (current.regions || []).filter(regionName => neighborhoods.some(name => config.regions.find(region => region.name === regionName)?.neighborhoods.includes(name)));
+    return { ...current, neighborhoods, regions };
+  });
+  const toggleNeighborhood = (item) => setFilters(current => {
+    const exists = (current.neighborhoods || []).includes(item);
+    const neighborhoods = exists ? current.neighborhoods.filter(value => value !== item) : [...(current.neighborhoods || []), item];
+    const regions = exists
+      ? (current.regions || []).filter(regionName => neighborhoods.some(name => config.regions.find(region => region.name === regionName)?.neighborhoods.includes(name)))
+      : Array.from(new Set([...(current.regions || []), selectedRegion.name]));
+    return { ...current, neighborhoods, regions };
+  });
+  return <div className="location-dialog-backdrop" onMouseDown={onClose}><section className="location-dialog" role="dialog" aria-modal="true" aria-labelledby="location-title" onMouseDown={e => e.stopPropagation()}><header><div><span>محدوده جست‌وجو</span><h2 id="location-title">منطقه و محله‌ها را انتخاب کنید</h2></div><button ref={closeRef} onClick={onClose} aria-label="بستن"><Cross2Icon /></button></header>{selectedNeighborhoods.length > 0 && <div className="location-selected" aria-label="محله‌های انتخاب‌شده"><strong>انتخاب‌های شما</strong><div>{selectedNeighborhoods.map(item => <button key={item} onClick={() => removeNeighborhood(item)}><span>{item}</span><Cross2Icon aria-hidden /></button>)}</div></div>}<div className="location-dialog-grid"><div><h3>منطقه</h3>{config.regions.map(region => <button key={region.id} className={`${activeRegionId === region.id ? "active" : ""} ${(filters.regions || []).includes(region.name) ? "selected" : ""}`} onClick={() => setActiveRegionId(region.id)}>{region.name}</button>)}</div><div><h3>محله‌های {selectedRegion?.name || "انتخابی"}</h3>{selectedRegion ? selectedRegion.neighborhoods.map(item => <button key={item} className={selectedNeighborhoods.includes(item) ? "active" : ""} aria-pressed={selectedNeighborhoods.includes(item)} onClick={() => toggleNeighborhood(item)}>{item}</button>) : <p>ابتدا یک منطقه را انتخاب کنید.</p>}</div></div><footer><button onClick={() => setFilters(current => ({ ...current, regions: [], neighborhoods: [] }))}>پاک کردن</button><button className="confirm" onClick={onClose}>اعمال {selectedNeighborhoods.length ? `${selectedNeighborhoods.length.toLocaleString("fa-IR")} محله` : "محدوده"}</button></footer></section></div>;
 }
 
 function DetailModal({ property, onClose }) {
@@ -135,9 +135,10 @@ function HomePage() {
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState("");
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState({ district: "", neighborhood: "", kind: "", budget: "", size: "", minPrice: "", maxPrice: "", minSize: "", maxSize: "" });
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [filters, setFilters] = useState({ regions: [], neighborhoods: [], kind: "", budget: "", size: "", minPrice: "", maxPrice: "", minSize: "", maxSize: "" });
   const setFilter = (name, value) => setFilters((current) => ({ ...current, [name]: value }));
-  const resetFilters = () => { setFilters({ district: "", neighborhood: "", kind: "", budget: "", size: "", minPrice: "", maxPrice: "", minSize: "", maxSize: "" }); setQuery(""); setSmartMatchIds(null); };
+  const resetFilters = () => { setFilters({ regions: [], neighborhoods: [], kind: "", budget: "", size: "", minPrice: "", maxPrice: "", minSize: "", maxSize: "" }); setQuery(""); setSmartMatchIds(null); };
   const loadProperties = () => {
     setLoading(true); setLoadError("");
     fetch("/api/properties", { cache: "no-store" })
@@ -169,9 +170,10 @@ function HomePage() {
     const budgetMatches = !filters.budget || (filters.budget === "under-10" ? p.priceValue < 10000000000 : p.priceValue >= 10000000000);
     const sizeMatches = !filters.size || (filters.size === "under-100" ? p.size < 100 : p.size >= 100);
     const smartMatches = !smartMatchIds || smartMatchIds.includes(String(p.id));
-    return smartMatches && textMatches && (!filters.district || sameDistrict(p.district, filters.district)) && (!filters.neighborhood || p.area.includes(filters.neighborhood)) && (!filters.kind || p.kind === filters.kind) && budgetMatches && sizeMatches && (!filters.minPrice || p.priceValue >= Number(filters.minPrice)) && (!filters.maxPrice || p.priceValue <= Number(filters.maxPrice)) && (!filters.minSize || p.size >= Number(filters.minSize)) && (!filters.maxSize || p.size <= Number(filters.maxSize));
+    const locationMatches = filters.neighborhoods.length ? filters.neighborhoods.some(item => p.area.includes(item)) : (!filters.regions.length || filters.regions.some(region => sameDistrict(p.district, region)));
+    return smartMatches && textMatches && locationMatches && (!filters.kind || p.kind === filters.kind) && budgetMatches && sizeMatches && (!filters.minPrice || p.priceValue >= Number(filters.minPrice)) && (!filters.maxPrice || p.priceValue <= Number(filters.maxPrice)) && (!filters.minSize || p.size >= Number(filters.minSize)) && (!filters.maxSize || p.size <= Number(filters.maxSize));
   }), [query, filters, smartMatchIds]);
-  const hasFilters = Boolean(query || Object.values(filters).some(Boolean));
+  const hasFilters = Boolean(query || Object.values(filters).some(value => Array.isArray(value) ? value.length > 0 : Boolean(value)));
   const toggleFavorite = async (id) => {
     if (!account || account.role !== "user") return go(`/login/user?returnTo=${encodeURIComponent("/")}`);
     const removing = favorites.includes(id);
@@ -200,15 +202,14 @@ function HomePage() {
   };
   const runQuickAction = (title) => {
     if (title === "مشاور اختصاصی") return go("/consultants");
-    if (title === "ارزش واقعی ملک") return go("/app?screen=ai-chat");
-    if (title === "بازدید سه‌بعدی") { setToast("تور سه‌بعدی پس از ثبت رسانهٔ ۳۶۰ درجه برای هر ملک فعال می‌شود."); return; }
-    const property = properties[0];
-    if (property) setSelected(property); else setToast("در حال حاضر فایل منتشرشده‌ای برای این خدمت وجود ندارد.");
+    if (title === "ارزش واقعی ملک") return go("/valuation");
+    if (title === "بازدید سه‌بعدی") return go("/virtual-tour");
+    return go("/visits/new");
   };
 
   return <main className="home-page" dir="rtl">
     <section className="hero-shell">
-      <Header onPanel={() => go("/panel")} />
+      <PublicSiteHeader overlay />
       <div className="hero-content">
         <p className="hero-kicker">تجربه‌ای مطمئن برای انتخاب خانه</p>
         <h1>{settings.slogan}</h1>
@@ -219,19 +220,16 @@ function HomePage() {
           <button onClick={() => go("/login/agency")}><HomeIcon/><span><strong>آژانس املاک</strong><small>ورود به حساب سازمانی آژانس</small></span><ChevronLeftIcon/></button>
         </div>
         <div className="smart-search">
-          <button className="search-submit" disabled={searchBusy} onClick={runSearch}><MagicWandIcon /> {searchBusy ? "در حال جست‌وجو…" : "جست‌وجوی هوشمند"}</button>
+          <button className="search-submit" onClick={() => go(`/ai-search${query.trim()?`?q=${encodeURIComponent(query.trim())}`:""}`)}><MagicWandIcon /> جست‌وجوی هوشمند</button>
           <input value={query} onChange={(e) => { setQuery(e.target.value); setSmartMatchIds(null); }} onKeyDown={(e) => e.key === "Enter" && !searchBusy && runSearch()} placeholder="خانه مورد نظرت رو با هوش مصنوعی پیدا کن..." aria-label="جست‌وجوی هوشمند ملک" />
           <MagnifyingGlassIcon />
         </div>
         <div className="filter-row" aria-label="فیلتر فایل‌های ملک">
-          <label><span className="sr-only">منطقه</span><select aria-label="منطقه" value={filters.district} onChange={(e) => setFilters((current) => ({ ...current, district: e.target.value, neighborhood: "" }))}><option value="">همه مناطق</option>{filterConfig.regions.map((region) => <option key={region.id} value={region.name}>{region.name}</option>)}</select><ChevronDownIcon /></label>
-          <label><span className="sr-only">محله</span><select aria-label="محله" value={filters.neighborhood} onChange={(e) => setFilter("neighborhood", e.target.value)}><option value="">همه محله‌ها</option>{filterConfig.regions.filter((region) => !filters.district || region.name === filters.district).flatMap((region) => region.neighborhoods).map((item) => <option key={item}>{item}</option>)}</select><ChevronDownIcon /></label>
+          <button onClick={() => setLocationOpen(true)}><DrawingPinIcon />{filters.neighborhoods.length ? `${filters.neighborhoods.length.toLocaleString("fa-IR")} محله انتخاب شده` : "منطقه و محله"}<ChevronDownIcon /></button>
           <label><span className="sr-only">نوع ملک</span><select aria-label="نوع ملک" value={filters.kind} onChange={(e) => setFilter("kind", e.target.value)}><option value="">همه ملک‌ها</option><option>آپارتمان</option><option>پنت‌هاوس</option></select><ChevronDownIcon /></label>
-          <label><span className="sr-only">قیمت</span><select aria-label="قیمت" value={filters.budget} onChange={(e) => setFilter("budget", e.target.value)}><option value="">هر قیمت</option><option value="under-10">کمتر از ۱۰ میلیارد</option><option value="over-10">۱۰ میلیارد و بیشتر</option></select><ChevronDownIcon /></label>
-          <label><span className="sr-only">متراژ</span><select aria-label="متراژ" value={filters.size} onChange={(e) => setFilter("size", e.target.value)}><option value="">هر متراژ</option><option value="under-100">کمتر از ۱۰۰ متر</option><option value="over-100">۱۰۰ متر و بیشتر</option></select><ChevronDownIcon /></label>
           <button className="more-filter" aria-expanded={moreFiltersOpen} onClick={() => setMoreFiltersOpen((open) => !open)}>فیلتر بیشتر <PlusIcon /></button>
         </div>
-        {moreFiltersOpen && <div className="advanced-filter" role="group" aria-label="فیلترهای بیشتر"><label>قیمت از<input inputMode="numeric" value={filters.minPrice} onChange={(e) => setFilter("minPrice", e.target.value.replace(/\D/g, ""))} placeholder="تومان" /></label><label>قیمت تا<input inputMode="numeric" value={filters.maxPrice} onChange={(e) => setFilter("maxPrice", e.target.value.replace(/\D/g, ""))} placeholder="تومان" /></label><label>متراژ از<input inputMode="numeric" value={filters.minSize} onChange={(e) => setFilter("minSize", e.target.value.replace(/\D/g, ""))} placeholder="متر" /></label><label>متراژ تا<input inputMode="numeric" value={filters.maxSize} onChange={(e) => setFilter("maxSize", e.target.value.replace(/\D/g, ""))} placeholder="متر" /></label><button onClick={resetFilters}>پاک کردن فیلترها</button></div>}
+        {moreFiltersOpen && <div className="advanced-filter" role="group" aria-label="فیلترهای بیشتر"><label>قیمت از<input inputMode="numeric" value={filters.minPrice ? Number(filters.minPrice).toLocaleString("fa-IR") : ""} onChange={(e) => setFilter("minPrice", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="تومان" /></label><label>قیمت تا<input inputMode="numeric" value={filters.maxPrice ? Number(filters.maxPrice).toLocaleString("fa-IR") : ""} onChange={(e) => setFilter("maxPrice", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="تومان" /></label><label>متراژ از<input inputMode="numeric" value={filters.minSize} onChange={(e) => setFilter("minSize", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="متر" /></label><label>متراژ تا<input inputMode="numeric" value={filters.maxSize} onChange={(e) => setFilter("maxSize", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="متر" /></label><button onClick={resetFilters}>پاک کردن فیلترها</button></div>}
         <div className="quick-action-grid">
           {quickActions.map(({ Icon, title, text }) => <button key={title} onClick={() => runQuickAction(title)}><Icon /><span><strong>{title}</strong><small>{text}</small></span></button>)}
         </div>
@@ -239,19 +237,21 @@ function HomePage() {
     </section>
 
     <section className="featured page-section">
-      <div className="section-title"><div><span>انتخاب‌های مطمئن حاتم</span><h2>فایل‌های ویژه</h2></div><button onClick={resetFilters}>مشاهده همه <ChevronLeftIcon /></button></div>
+      <div className="section-title"><div><span>انتخاب‌های مطمئن حاتم</span><h2>فایل‌های ویژه</h2></div><button onClick={() => go("/properties/featured")}>مشاهده همه <ChevronLeftIcon /></button></div>
       <div className="listing-grid">
-        {(hasFilters ? filtered : properties).map((property) => <PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={() => toggleFavorite(property.id)} onOpen={() => setSelected(property)} />)}
+        {(hasFilters ? filtered : properties.filter(property => property.featured)).map((property) => <PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={() => toggleFavorite(property.id)} />)}
       </div>
       {loading && <div className="no-result" role="status"><h3>در حال دریافت فایل‌های تأییدشده…</h3></div>}
       {!loading && loadError && <div className="no-result" role="alert"><h3>{loadError}</h3><button onClick={loadProperties}>تلاش دوباره</button></div>}
       {!loading && !loadError && !properties.length && <div className="no-result"><MagnifyingGlassIcon /><h3>هنوز فایل تأییدشده‌ای منتشر نشده است</h3><p>فایل‌های تأییدشده مدیر در این بخش نمایش داده می‌شوند.</p></div>}
+      {!loading && !loadError && !hasFilters && properties.length > 0 && !properties.some(property => property.featured) && <div className="no-result"><MagnifyingGlassIcon /><h3>هنوز فایل ویژه‌ای انتخاب نشده است</h3><p>مدیر می‌تواند از بخش مدیریت ملک‌ها، فایل‌های منتخب را ویژه کند.</p><button onClick={() => go("/properties")}>مشاهده آرشیو املاک</button></div>}
       {hasFilters && filtered.length === 0 && <div className="no-result"><MagnifyingGlassIcon /><h3>فایلی با این فیلترها پیدا نشد</h3><button onClick={resetFilters}>نمایش همه فایل‌ها</button></div>}
     </section>
 
     <section className="trust-strip page-section"><div><strong>+۲۴۰</strong><span>فایل تاییدشده</span></div><div><strong>۹۸٪</strong><span>رضایت مشتریان</span></div><div><strong>۱۵ سال</strong><span>تجربه بازار تهران</span></div><button onClick={() => go("/panel")}><RocketIcon /> ورود به پنل کاربری</button></section>
     {toast && <div className="toast" role="status">{toast}</div>}
     <DetailModal property={selected} onClose={() => setSelected(null)} />
+    <LocationFilterDialog open={locationOpen} onClose={() => setLocationOpen(false)} config={filterConfig} filters={filters} setFilters={setFilters} />
   </main>;
 }
 

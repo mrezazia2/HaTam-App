@@ -1,0 +1,8 @@
+/* Shared operational controls must always occupy separate safe zones. */
+.admin-fab-stack{z-index:135!important;left:22px!important;bottom:76px!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;max-width:min(250px,calc(100vw - 44px))!important}.admin-fab-stack a{text-align:center}.admin-integrations-shortcut{top:72px!important;max-width:calc(100vw - 320px);flex-wrap:wrap}.session-logout{z-index:190!important}.communications-dock{z-index:190!important}
+
+/* The brand typography control now scales inherited and explicitly-sized UI text. */
+html{font-size:calc(16px * var(--brand-type-scale,1))}body{font-size:1rem}body :is(button,input,select,textarea){font-family:var(--brand-font,"Vazirmatn",Tahoma,sans-serif)}
+html[data-theme] :is(.admin-workspace,.portal-page) :is(label,p,button,th,td){font-size:calc(14px * var(--brand-type-scale,1))}html[data-theme] :is(.admin-workspace,.portal-page) small{font-size:calc(12px * var(--brand-type-scale,1))}
+
+@media(max-width:760px){.admin-fab-stack{left:12px!important;bottom:70px!important;max-width:190px!important}.admin-integrations-shortcut{top:72px!important;right:12px!important;left:58px!important;max-width:none}.communications-dock{right:12px!important;bottom:12px!important}}

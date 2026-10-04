@@ -5,22 +5,23 @@ import { CheckCircledIcon, DrawingPinIcon, Share2Icon } from "@radix-ui/react-ic
 import { useBrand } from "../../brand/BrandProvider";
 import PropertyActions from "./PropertyActions";
 
-type PropertyData = { id: string; title: string; address: string; area: number; bedrooms: number; price: number; description: string; coverImage: string | null; transactionType: string; latitude: number | null; longitude: number | null };
+type PropertyData = { id: string; title: string; address: string; area: number; bedrooms: number; price: number; description: string; coverImage: string | null; transactionType: string; latitude: number | null; longitude: number | null; media:{key:string;url:string;name:string;type:string}[] };
 const fa = (value: number) => value.toLocaleString("fa-IR");
 
 export default function PropertyDetail({ property }: { property: PropertyData }) {
   const { settings } = useBrand();
   const [notice, setNotice] = useState("");
+  const [activeMedia,setActiveMedia]=useState(0);
   const notify = (value: string) => { setNotice(value); window.setTimeout(() => setNotice(""), 2800); };
-  const image = property.coverImage || "/assets/hatam/luxury-living.webp";
+  const fallback={key:"cover",url:property.coverImage || "/assets/hatam/luxury-living.webp",name:property.title,type:"image/webp"},gallery=property.media.length?property.media:[fallback],active=gallery[Math.min(activeMedia,gallery.length-1)];
   const transaction = property.transactionType === "rent" ? "اجاره" : property.transactionType === "presale" ? "پیش‌فروش" : "فروش";
   const share = async () => {
     try { if (navigator.share) await navigator.share({ title: property.title, text: property.address, url: window.location.href }); else { await navigator.clipboard.writeText(window.location.href); notify("لینک ملک کپی شد."); } }
     catch (error) { if (error instanceof Error && error.name !== "AbortError") notify("اشتراک‌گذاری انجام نشد."); }
   };
   return <main className="property-page" dir="rtl">
-    <header className="property-topbar"><Link href="/"><img src={settings.logoUrl} alt={settings.brandName}/></Link><nav><Link href="/">خانه</Link><Link href="/app">جست‌وجوی ملک</Link><Link href="/panel">پنل کاربری</Link></nav><Link className="property-login" href={`/login/user?returnTo=${encodeURIComponent(`/property/${property.id}`)}`}>ورود / ثبت‌نام</Link></header>
-    <div className="property-gallery"><div className="property-gallery-main"><img src={image} alt={property.title}/><span>فایل تأییدشده حاتم</span></div><img src="/assets/hatam/penthouse.webp" alt="نمای داخلی ملک"/><img src="/assets/hatam/bright-apartment.webp" alt="فضای روشن ملک"/><button onClick={() => notify("رسانه‌های ثبت‌شده این ملک در نسخه کامل گالری نمایش داده می‌شوند.")}>مشاهده تصاویر</button></div>
+    <header className="property-topbar"><Link href="/"><img src={settings.logoUrl} alt={settings.brandName}/></Link><nav><Link href="/">خانه</Link><Link href="/properties">جست‌وجوی ملک</Link><Link href="/favorites">علاقه‌مندی‌ها</Link></nav><Link className="property-login" href={`/login/user?returnTo=${encodeURIComponent(`/property/${property.id}`)}`}>ورود به پنل</Link></header>
+    <div className="property-gallery"><div className="property-gallery-main">{active.type.startsWith("video/")?<video src={active.url} controls playsInline/>:<img src={active.url} alt={property.title}/>}<span>فایل تأییدشده حاتم</span></div><div className="property-gallery-thumbs">{gallery.map((item,index)=><button key={item.key} className={activeMedia===index?"active":""} onClick={()=>setActiveMedia(index)} aria-label={`نمایش رسانه ${index+1}`}>{item.type.startsWith("video/")?<video src={item.url} muted/>:<img src={item.url} alt={item.name}/>}</button>)}</div><b className="property-media-count">{gallery.length.toLocaleString("fa-IR")} رسانه</b></div>
     <section className="property-layout"><article className="property-detail-main">
       <div className="property-title-row"><div><span>کد فایل: {property.id.toUpperCase()}</span><h1>{property.title}</h1><p><DrawingPinIcon/>{property.address}</p></div><div><button aria-label="اشتراک‌گذاری" onClick={() => void share()}><Share2Icon/></button></div></div>
       <div className="property-price"><strong>{fa(property.price)} تومان</strong><span>{transaction} · متری {fa(Math.round(property.price / Math.max(property.area, 1)))} تومان</span></div>

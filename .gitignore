@@ -40,3 +40,16 @@ next-env.d.ts
 /.sites-runtime/
 /outputs/
 /work/
+/data/
+/backups/
+/.runtime-test/
+/.runtime-ssh/
+
+# local QA output and release bundles (never publish these to GitHub)
+/.qa-data/
+/*.log
+/*.tar.gz
+/tsconfig.tsbuildinfo
+/implementation-*.png
+/contact-implementation*.png
+/app-contact-screen.png

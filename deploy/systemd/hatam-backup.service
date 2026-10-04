@@ -1,0 +1,10 @@
+[Unit]
+Description=HataM application backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/hatam
+Environment=HATAM_BACKUP_RETENTION_DAYS=14
+ExecStart=/bin/bash /opt/hatam/deploy/backup.sh /opt/hatam-backups

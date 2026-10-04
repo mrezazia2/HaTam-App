@@ -1,3 +1,4 @@
+import {trustedMutation} from "../../../auth/security";
 import {desc,eq,inArray,lte} from "drizzle-orm";
 import {getDb} from "../../../../db";
 import {accounts,sessions} from "../../../../db/schema";
@@ -6,8 +7,8 @@ import {authRateLimited,recordAuthEvent} from "../../_lib/auth-security";
 import {writeAudit} from "../../_lib/audit";
 
 const destinations={user:"/panel",consultant:"/consultant",agency:"/agency",admin:"/admin"} as const;
-export async function POST(request:Request){
- const body=await request.json() as {username?:string;password?:string;role?:keyof typeof destinations},mobile=normalizeMobile(String(body.username||"")),password=String(body.password||"");if(!mobile||!password||!body.role||!destinations[body.role])return Response.json({ok:false,error:"INVALID_CREDENTIALS"},{status:400});
+export async function POST(request:Request){if(!trustedMutation(request))return Response.json({ok:false,error:"UNTRUSTED_ORIGIN"},{status:403});
+ let body:{username?:string;password?:string;role?:keyof typeof destinations};try{body=await request.json()}catch{return Response.json({ok:false,error:"INVALID_CREDENTIALS"},{status:400})}const mobile=normalizeMobile(String(body?.username||"")),password=String(body?.password||"");if(!mobile||!password||!body?.role||!destinations[body.role])return Response.json({ok:false,error:"INVALID_CREDENTIALS"},{status:400});
  const db=getDb(),rate=await authRateLimited(request,mobile,"password_login",15*60_000,6,40);if(rate.limited){await writeAudit(db,{id:"anonymous",role:"system"},"auth.password_rate_limited","auth",null,"ورود با رمز به‌دلیل تلاش زیاد محدود شد.",{identifierHash:rate.identifierHash,ipHash:rate.ipHash});return Response.json({ok:false,error:"TOO_MANY_ATTEMPTS",retryAfter:900},{status:429})}
  const account=(await db.select().from(accounts).where(eq(accounts.mobile,mobile)).limit(1))[0],valid=Boolean(account&&account.role===body.role&&account.passwordHash&&await verifyPassword(password,account.passwordHash));await recordAuthEvent("password_login",rate,valid);
  if(!valid){await writeAudit(db,{id:account?.id||"anonymous",role:account?.role||"system"},"auth.password_failed","auth",account?.id||null,"تلاش ناموفق ورود با رمز ثبت شد.",{identifierHash:rate.identifierHash,ipHash:rate.ipHash});return Response.json({ok:false,error:"INVALID_CREDENTIALS"},{status:401})}

@@ -1,0 +1,57 @@
+/* Real handsets use the viewport, not a scaled desktop device mockup. */
+@media (max-width:700px) {
+ .mobile-route,.mobile-route .phone-stage {width:100%;height:100dvh;min-height:0;padding:0;overflow:hidden}
+ .mobile-route .phone-scale-box,.mobile-route .phone-device {position:absolute;inset:0;width:100%!important;height:100%!important;transform:none!important}
+ .mobile-route .device-screen {inset:0!important;width:100%!important;height:100%!important;border-radius:0!important;box-shadow:none;--device-safe-area-bottom:env(safe-area-inset-bottom,0px)!important}
+ .mobile-route :is(.phone-bezel,.device-camera,.device-menu-bar,.status-bar,.home-indicator,.mobile-cursor) {display:none!important}
+ .mobile-route .mobile-app-viewport {inset:0!important}
+ .mobile-route .device-screen * {cursor:auto!important}
+ .mobile-route .device-screen :is(button,a) {cursor:pointer!important}
+}
+
+.hatam-app {font-size:calc(16px * var(--brand-type-scale,1));line-height:1.7}
+.hatam-app :is(input,select,textarea) {font-size:16px!important;line-height:1.6;color:var(--theme-text)!important;background-color:var(--theme-surface-2)!important;-webkit-text-fill-color:var(--theme-text)!important;min-height:44px}
+.hatam-app :is(.home-tagline,.filter-card>p,.field-caption,.select-label>span,.urgent-intro span) {font-size:14px}
+.hatam-app :is(.filter-card h2,.submit-form-card h2,.archive-copy h2) {font-size:16px}
+.hatam-app :is(.dual-fields span,.dual-fields small,.triple-fields label span,.triple-fields small,.counter-card>span,.text-fields label span,.wide-text-field span,.submit-grid label>span) {font-size:13px}
+.hatam-app :is(.choice-row button,.neighborhood-list button,.more-filters,.stepper-row,.toggle-field,.bottom-nav button) {font-size:13px}
+.hatam-app :is(.home-quick-actions button,.home-smart-search button span,.home-smart-search button small,.archive-sort-trigger,.archive-sort-panel button) {font-size:13px}
+.hatam-app .archive-property {grid-template-columns:84px minmax(0,1fr) 100px;gap:8px;padding:12px 10px;min-height:150px}
+.hatam-app .archive-property>img {width:84px;height:112px}
+.hatam-app .archive-copy>p {font-size:13px}
+.hatam-app .archive-copy>div span,.hatam-app .archive-property aside time {font-size:12px}
+.hatam-app .archive-property aside strong {font-size:14px;overflow-wrap:anywhere}
+.hatam-app .home-smart-search {min-height:54px;height:auto}
+html[data-theme] .hatam-app .home-smart-search {background:var(--theme-surface-2);border-color:var(--theme-border)}
+.hatam-app .home-smart-search input {min-width:0}
+html[data-theme] :is(.portal-page,.admin-workspace,.panel-page) {background:var(--theme-page);color:var(--theme-text)}
+html[data-theme] :is(.admin-card,.admin-kpis>button,.entity-modal form,.entity-table,.filter-admin-card,.page-list,.builder-editor,.builder-preview,.preview-canvas,.builder-blocks article) {background:var(--theme-surface);color:var(--theme-text);border-color:var(--theme-border)}
+html[data-theme] :is(.admin-heading,.admin-card,.admin-kpis,.portal-header,.portal-agenda,.portal-focus,.portal-profile) :is(h1,h2,h3,strong,button) {color:var(--theme-text)}
+html[data-theme] :is(.admin-workspace,.portal-page) :is(label,p,button,th,td) {font-size:14px}
+html[data-theme] :is(.admin-workspace,.portal-page) small {font-size:12px;color:var(--theme-muted)}
+html[data-theme] .admin-workspace :is(.admin-heading span,.admin-card header span,.admin-kpis span,.entity-toolbar>span,.entity-head,.entity-name strong,.entity-table article>a,.entity-table article>p,.entity-actions button,.entity-actions em,.page-list header strong,.page-list button strong,.builder-settings label,.block-toolbar button,.builder-blocks article header>b,.builder-footer>a,.builder-footer>button) {font-size:12px}
+html[data-theme] .admin-workspace :is(.admin-heading p,.admin-kpis small,.entity-name small,.entity-table article>small,.page-list header span,.page-list button small,.page-list em,.builder-preview>header,.preview-canvas p,.content-features span) {font-size:11px}
+html[data-theme] .admin-nav :is(button,a,strong,small),html[data-theme] .admin-owner :is(strong,small) {color:#edf4f0;-webkit-text-fill-color:#edf4f0}
+html[data-theme] .admin-nav {background:#063326;color:#edf4f0}
+html[data-theme] .admin-nav nav button {font-size:13px}
+html[data-theme] .admin-owner small {color:#b9c8c1;-webkit-text-fill-color:#b9c8c1}
+html[data-theme] .admin-progress>div:before {background:var(--theme-surface-2)}
+html[data-theme] .admin-workspace .entity-empty {font-size:14px;color:var(--theme-muted)}
+html[data-theme] .global-theme-toggle {top:auto;bottom:18px;left:18px}
+.hatam-app .bottom-nav {height:76px}
+.hatam-app .bottom-nav button {height:64px}
+.hatam-app :is(.choice-row button,.archive-sort-panel button) {min-height:44px}
+.hatam-app .device-screen :focus-visible, .device-screen .hatam-app :focus-visible {outline:2px solid var(--brand-accent,#d7ae58)!important;outline-offset:2px}
+html[data-theme] :is(.portal-page,.admin-page,.admin-workspace,.panel-page) :is(input,select,textarea) {font-size:16px;line-height:1.6;color:var(--theme-text);background-color:var(--theme-surface-2);-webkit-text-fill-color:var(--theme-text)}
+html[data-theme] .admin-workspace :is(.builder-settings label>div,.block-toolbar) {background:var(--theme-surface-2);border-color:var(--theme-border)}
+html[data-theme] .admin-workspace :is(.page-list button,.block-toolbar button,.builder-blocks article header button,.builder-footer>a,.builder-footer>button) {color:var(--theme-text);border-color:var(--theme-border)}
+html[data-theme] :is(.portal-card,.portal-stats article,.portal-module-card,.portal-modal>section,.portal-benefit-grid article,.portal-billing,.notice-list>button,.chat-shell main,.chat-shell aside) {background:var(--theme-surface);color:var(--theme-text);border-color:var(--theme-border)}
+html[data-theme] :is(.portal-page,.communications-panel) :is(p,small,label,time) {color:var(--theme-muted)}
+html[data-theme] :is(.portal-page,.communications-panel) :is(p,label) {font-size:14px}
+html[data-theme] :is(.portal-page,.communications-panel) :is(small,time) {font-size:12px}
+html[data-theme] .portal-sidebar nav button {color:var(--theme-text);font-size:14px}
+html[data-theme] .portal-sidebar nav button.active {background:var(--theme-surface-2)}
+html[data-theme] :is(.agency-quick-form,.account-settings) {background:var(--theme-surface);color:var(--theme-text);border-color:var(--theme-border)}
+html[data-theme] .agency-quick-form :is(input,select,textarea) {background:var(--theme-surface-2)!important;color:var(--theme-text)!important;border-color:var(--theme-border);-webkit-text-fill-color:var(--theme-text)!important}
+html[data-theme] .agency-quick-form :is(input,textarea)::placeholder {color:var(--theme-muted);opacity:.85}
+@media(max-width:380px){.hatam-app .archive-property{grid-template-columns:70px minmax(0,1fr) 90px;gap:6px}.hatam-app .archive-property>img{width:70px}}

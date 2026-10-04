@@ -9,7 +9,7 @@ import "./style.css";
 export default async function PaymentCallback({ searchParams }: { searchParams: Promise<{ intent?: string }> }) {
   const query = await searchParams;
   const requestHeaders = new Headers(await headers());
-  const account = await getRequestAccount(new Request("https://hatamestate.ir/payment/callback", { headers: requestHeaders }));
+  const account = await getRequestAccount(new Request("https://hatamestate.com/payment/callback", { headers: requestHeaders }));
   const intent = account?.status === "active" && query.intent
     ? (await getDb().select().from(paymentIntents).where(account.role === "admin"
       ? eq(paymentIntents.id, query.intent)
