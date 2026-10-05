@@ -1,0 +1,16 @@
+body:has(.admin-workspace)>.global-theme-toggle,body:has(.admin-workspace) .global-theme-toggle{display:none!important}
+.admin-nav{overflow-y:auto;min-height:100vh}
+.admin-nav nav{overflow:visible;flex:0 0 auto}
+.admin-nav nav button{width:100%;position:relative;font-size:12px;gap:9px}
+.admin-nav-badge{min-width:22px;height:22px;margin-inline-start:auto;padding:0 5px;display:grid;place-items:center;border-radius:20px;background:#d7ae58;color:#10291f;font-size:11px;line-height:1}
+.admin-nav-tools{padding:10px 0;display:grid;gap:2px;border-top:1px solid rgba(215,174,88,.2)}
+.admin-nav-tools>strong{padding:8px 12px;color:#d7ae58;font-size:11px}
+.admin-nav-tools>a,.admin-nav-bottom>a,.admin-nav-bottom .session-logout{width:100%;min-height:38px;padding:7px 12px;display:flex;align-items:center;border:0;border-radius:9px;color:#c6d3cd;background:transparent;text-align:right;text-decoration:none;font:inherit;font-size:11px;box-shadow:none}
+.admin-nav-tools>a:hover,.admin-nav-bottom>a:hover,.admin-nav-bottom .session-logout:hover{background:rgba(255,255,255,.08)}
+.admin-nav-bottom{margin-top:auto;padding-top:10px;border-top:1px solid rgba(215,174,88,.2)}
+.admin-nav-bottom .session-logout{position:static;cursor:pointer}
+.admin-heading-actions{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.admin-theme-button{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(215,174,88,.35);border-radius:11px;color:#d7ae58;background:#082e24;cursor:pointer}
+.admin-theme-button svg{width:20px;height:20px}
+.admin-mobile-menu-toggle{display:none}
+@media(max-width:760px){.admin-nav{height:auto;min-height:0;overflow:visible}.admin-nav nav{overflow-x:auto;grid-column:1/-1;scrollbar-width:none}.admin-nav nav::-webkit-scrollbar{display:none}.admin-nav nav button{width:auto}.admin-mobile-menu-toggle{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(215,174,88,.3);border-radius:9px;color:#d7ae58;background:transparent}.admin-nav-tools,.admin-nav-bottom{display:none}.admin-nav-tools.open{grid-column:1/-1;max-height:42vh;overflow-y:auto;display:grid}.admin-nav-bottom.open{grid-column:1/-1;display:flex;align-items:center;gap:8px}.admin-nav-bottom.open>a,.admin-nav-bottom.open .session-logout{width:auto;flex:1}.admin-heading-actions{gap:5px}.admin-theme-button{width:36px;height:36px}}

@@ -1,0 +1,3 @@
+.upload-format-group{margin-top:14px;padding:12px;border:1px solid var(--theme-border);border-radius:12px}
+.upload-format-group>div{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.upload-format-group .upload-format-master{display:inline-flex;min-width:0;font-weight:700}

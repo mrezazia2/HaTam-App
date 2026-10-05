@@ -9,6 +9,7 @@ import "./admin/admin.css";
 import "./admin/operations.css";
 import "./admin/approvals.css";
 import "./admin/workspace.css";
+import "./admin/navigation-polish.css";
 import "./admin/urgent-sales.css";
 import "./admin/integrations.css";
 import "./admin/sms-settings.css";
@@ -32,6 +33,7 @@ import PasswordSetupPrompt from "./auth/PasswordSetupPrompt";
 import "./auth/password-setup.css";
 import "./theme/release-readability.css";
 import "./theme/ui-overrides.css";
+import "./brand/scoped-appearance.css";
 import "./pwa/pwa.css";
 import PwaInstallPrompt from "./pwa/PwaInstallPrompt";
 

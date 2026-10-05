@@ -32,7 +32,7 @@ export function cleanUploadSettings(value: Partial<UploadSettings> | null | unde
     videoMaxMb: number(value?.videoMaxMb, defaultUploadSettings.videoMaxMb, 1, 500),
     documentMaxMb: number(value?.documentMaxMb, defaultUploadSettings.documentMaxMb, 1, 500),
     maxPropertyFiles: number(value?.maxPropertyFiles, defaultUploadSettings.maxPropertyFiles, 1, 30),
-    allowedExtensions: Array.from(new Set(allowed.length ? allowed : defaultUploadSettings.allowedExtensions)),
+    allowedExtensions: Array.from(new Set(allowed)),
   };
 }
 
@@ -52,10 +52,11 @@ export function uploadCategory(file: Pick<File, "name" | "type">) {
   return "document" as const;
 }
 
-export function validateUpload(file: File, settings: UploadSettings, scope: "property" | "document") {
+export function validateUpload(file: File, settings: UploadSettings, scope: "property" | "document" | "video") {
   const extension = fileExtension(file), category = uploadCategory(file);
   if (!settings.allowedExtensions.includes(extension)) return { ok: false as const, error: "FILE_TYPE_NOT_ALLOWED" };
   if (scope === "property" && category === "document") return { ok: false as const, error: "PROPERTY_MEDIA_ONLY" };
+  if (scope === "video" && (category !== "video" || !videoExtensions.has(extension))) return { ok: false as const, error: "VIDEO_ONLY" };
   const maxMb = category === "image" ? settings.imageMaxMb : category === "video" ? settings.videoMaxMb : settings.documentMaxMb;
   if (file.size <= 0 || file.size > maxMb * 1024 * 1024) return { ok: false as const, error: "FILE_TOO_LARGE", maxMb };
   return { ok: true as const, category, extension, maxMb };

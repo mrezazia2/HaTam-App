@@ -5,7 +5,7 @@
 (hatam_backend) {
   encode zstd gzip
   request_body {
-    max_size 105MB
+    max_size 525MB
   }
   header X-Content-Type-Options nosniff
   header Referrer-Policy strict-origin-when-cross-origin

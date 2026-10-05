@@ -6,7 +6,7 @@ import { deleteUrgentSale, fetchUrgentSalesData, updateUrgentSale, type UrgentSa
 
 type Consultant = { id: string; name: string; mobile: string };
 
-export default function UrgentSaleManager({ notify }: { notify: (message: string) => void }) {
+export default function UrgentSaleManager({ notify,onChanged }: { notify: (message: string) => void;onChanged?:()=>void }) {
   const [items, setItems] = useState<UrgentSaleRequest[]>([]);
   const [consultants, setConsultants] = useState<Consultant[]>([]);
   const [query, setQuery] = useState("");
@@ -23,12 +23,12 @@ export default function UrgentSaleManager({ notify }: { notify: (message: string
   const update = async (id: string, patch: Partial<UrgentSaleRequest> & { assignedConsultantId?: string }) => {
     const previous = items;
     setItems(current => current.map(item => item.id === id ? { ...item, ...patch } : item));
-    try { await updateUrgentSale(id, patch); notify("درخواست در پایگاه داده به‌روزرسانی شد."); }
+    try { await updateUrgentSale(id, patch); notify("درخواست در پایگاه داده به‌روزرسانی شد."); onChanged?.(); }
     catch { setItems(previous); notify("ذخیره تغییرات انجام نشد."); }
   };
   const remove = async (id: string) => {
     if (!window.confirm("این درخواست حذف شود؟")) return;
-    try { await deleteUrgentSale(id); setItems(current => current.filter(item => item.id !== id)); notify("درخواست حذف شد."); }
+    try { await deleteUrgentSale(id); setItems(current => current.filter(item => item.id !== id)); notify("درخواست حذف شد."); onChanged?.(); }
     catch { notify("حذف درخواست انجام نشد."); }
   };
   const rows = useMemo(() => items.filter(item => `${item.firstName} ${item.lastName} ${item.mobile || ""} ${item.address} ${item.id}`.includes(query.trim())), [items, query]);

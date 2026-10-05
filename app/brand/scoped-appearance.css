@@ -1,0 +1,33 @@
+/* Each product gets its own appearance tokens; brand name and assets remain shared. */
+html[data-theme="light"] :is(.public-site-page,.experience-root:has(.home-page),.auth-page,.role-auth-page){--theme-page:var(--site-light-background);--theme-surface:var(--site-light-surface);--theme-text:var(--site-light-text);--brand-primary:var(--site-light-primary);--brand-accent:var(--site-light-accent)}
+html[data-theme="dark"] :is(.public-site-page,.experience-root:has(.home-page),.auth-page,.role-auth-page){--theme-page:var(--site-dark-background);--theme-surface:var(--site-dark-surface);--theme-text:var(--site-dark-text);--brand-primary:var(--site-dark-primary);--brand-accent:var(--site-dark-accent)}
+:is(.public-site-page,.experience-root:has(.home-page),.auth-page,.role-auth-page){font-family:var(--site-font-family,Vazirmatn,sans-serif);font-size:calc(14px * var(--site-font-scale,1));color:var(--theme-text);background-color:var(--theme-page)}
+html[data-theme="light"] .hatam-app{--theme-page:var(--app-light-background);--theme-surface:var(--app-light-surface);--theme-text:var(--app-light-text);--brand-primary:var(--app-light-primary);--brand-accent:var(--app-light-accent)}
+html[data-theme="dark"] .hatam-app{--theme-page:var(--app-dark-background);--theme-surface:var(--app-dark-surface);--theme-text:var(--app-dark-text);--brand-primary:var(--app-dark-primary);--brand-accent:var(--app-dark-accent)}
+.hatam-app{font-family:var(--app-font-family,Vazirmatn,sans-serif);font-size:calc(14px * var(--app-font-scale,1));color:var(--theme-text);background-color:var(--theme-page)}
+.hatam-app{--hatam-green:var(--theme-page);--hatam-deep:var(--theme-page);--hatam-panel:var(--theme-surface);--hatam-panel-2:var(--theme-surface);--hatam-white:var(--theme-text);--hatam-gold:var(--brand-accent)}
+html[data-theme] .hatam-app :is(.hatam-scroll,.home-screen,.search-screen,.saved-screen,.profile-screen){background-color:var(--theme-page);color:var(--theme-text)}
+html[data-theme="light"] :is(.portal-user,.panel-page,.panel-shell){--theme-page:var(--user-light-background);--theme-surface:var(--user-light-surface);--theme-text:var(--user-light-text);--brand-primary:var(--user-light-primary);--brand-accent:var(--user-light-accent)}
+html[data-theme="dark"] :is(.portal-user,.panel-page,.panel-shell){--theme-page:var(--user-dark-background);--theme-surface:var(--user-dark-surface);--theme-text:var(--user-dark-text);--brand-primary:var(--user-dark-primary);--brand-accent:var(--user-dark-accent)}
+html[data-theme="light"] .portal-consultant{--theme-page:var(--consultant-light-background);--theme-surface:var(--consultant-light-surface);--theme-text:var(--consultant-light-text);--brand-primary:var(--consultant-light-primary);--brand-accent:var(--consultant-light-accent)}
+html[data-theme="dark"] .portal-consultant{--theme-page:var(--consultant-dark-background);--theme-surface:var(--consultant-dark-surface);--theme-text:var(--consultant-dark-text);--brand-primary:var(--consultant-dark-primary);--brand-accent:var(--consultant-dark-accent)}
+html[data-theme="light"] .portal-agency{--theme-page:var(--agency-light-background);--theme-surface:var(--agency-light-surface);--theme-text:var(--agency-light-text);--brand-primary:var(--agency-light-primary);--brand-accent:var(--agency-light-accent)}
+html[data-theme="dark"] .portal-agency{--theme-page:var(--agency-dark-background);--theme-surface:var(--agency-dark-surface);--theme-text:var(--agency-dark-text);--brand-primary:var(--agency-dark-primary);--brand-accent:var(--agency-dark-accent)}
+html[data-theme="light"] .admin-shell{--theme-page:var(--admin-light-background);--theme-surface:var(--admin-light-surface);--theme-text:var(--admin-light-text);--brand-primary:var(--admin-light-primary);--brand-accent:var(--admin-light-accent)}
+html[data-theme="dark"] .admin-shell{--theme-page:var(--admin-dark-background);--theme-surface:var(--admin-dark-surface);--theme-text:var(--admin-dark-text);--brand-primary:var(--admin-dark-primary);--brand-accent:var(--admin-dark-accent)}
+:is(.portal-user,.panel-page,.panel-shell){font-family:var(--user-font-family,Vazirmatn,sans-serif);font-size:calc(14px * var(--user-font-scale,1));color:var(--theme-text);background-color:var(--theme-page)}
+.portal-consultant{font-family:var(--consultant-font-family,Vazirmatn,sans-serif);font-size:calc(14px * var(--consultant-font-scale,1));color:var(--theme-text);background-color:var(--theme-page)}
+.portal-agency{font-family:var(--agency-font-family,Vazirmatn,sans-serif);font-size:calc(14px * var(--agency-font-scale,1));color:var(--theme-text);background-color:var(--theme-page)}
+.admin-shell{font-family:var(--admin-font-family,Vazirmatn,sans-serif);font-size:calc(14px * var(--admin-font-scale,1));color:var(--theme-text);background-color:var(--theme-page);min-height:100vh}
+:is(.portal-sidebar,.panel-sidebar,.admin-nav,.admin-sidebar,.ops-sidebar){background-color:var(--brand-primary)!important}
+html[data-theme] :is(.portal-card,.portal-module-card,.admin-card,.entity-table,.admin-kpis>button,.ops-card){background-color:var(--theme-surface);color:var(--theme-text)}
+html[data-theme] .hatam-app :is(.home-tagline,.filter-card>p,.archive-copy>p,.bottom-nav button){font-size:calc(14px * var(--app-font-scale,1))}
+html[data-theme] .public-site-page :is(input,select,textarea,button){font-size:calc(14px * var(--site-font-scale,1))}
+html[data-theme] :is(.portal-page,.admin-shell) :is(input,select,textarea,button){font-size:inherit}
+html[data-theme] body:has(main[class*="admin-"]) .global-theme-toggle{top:18px;bottom:auto;left:18px;width:42px;min-width:42px;padding:0}
+html[data-theme] body:has(main[class*="admin-"]) .global-theme-toggle span{display:none}
+html[data-theme] body:has(.admin-workspace) .global-theme-toggle{display:none!important}
+html[data-theme] body:has(.admin-page) .global-theme-toggle{display:none!important}
+html[data-theme="light"] .admin-shell .admin-theme-button{color:var(--admin-light-primary)!important;background:var(--admin-light-surface)!important}
+html[data-theme="dark"] .admin-shell .admin-theme-button{color:var(--admin-dark-accent)!important;background:var(--admin-dark-surface)!important}
+.admin-page .admin-actions .admin-theme-button{flex:0 0 44px;width:44px;padding:0;justify-content:center}

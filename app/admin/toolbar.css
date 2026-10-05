@@ -1,0 +1,11 @@
+body:has(.admin-shell) .global-theme-toggle{display:none!important}
+.admin-subpage-toolbar{height:58px;padding:8px clamp(16px,3vw,38px);display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--theme-border);color:var(--theme-text);background:var(--theme-surface)}
+.admin-subpage-toolbar a{color:var(--theme-text);text-decoration:none;font-size:13px;font-weight:700}
+.admin-subpage-toolbar button{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--theme-border);border-radius:10px;color:var(--brand-accent);background:var(--theme-surface-2);cursor:pointer}
+.admin-subpage-toolbar svg{width:19px;height:19px}
+.admin-shell:has(.admin-workspace)>.admin-subpage-toolbar,.admin-shell:has(.admin-page)>.admin-subpage-toolbar{display:none}
+html[data-theme] .admin-shell .trust-admin-page{background:var(--theme-page);color:var(--theme-text)}
+html[data-theme] .admin-shell .trust-admin-page :is(.trust-upload,.trust-admin-list article){background:var(--theme-surface);color:var(--theme-text);border-color:var(--theme-border)}
+html[data-theme] .admin-shell .trust-admin-page :is(.trust-upload input,.trust-admin-list input){background:var(--theme-surface-2);color:var(--theme-text);border-color:var(--theme-border)}
+html[data-theme] .admin-shell .trust-admin-page :is(p,.trust-upload label,.trust-admin-list small,.trust-admin-empty){color:var(--theme-text)}
+.admin-shell .trust-admin-page>header>a{display:none}
