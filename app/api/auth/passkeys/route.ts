@@ -1,0 +1,9 @@
+import {and,eq} from "drizzle-orm";
+import {getDb} from "../../../../db";
+import {passkeyCredentials} from "../../../../db/schema";
+import {writeAudit} from "../../_lib/audit";
+import {authenticatedPasskeyAccount,passkeySite,trustedPasskeyMutation} from "../../_lib/passkey";
+
+export const dynamic="force-dynamic";
+export async function GET(request:Request){const account=await authenticatedPasskeyAccount(request);if(!passkeySite(request)||!account)return Response.json({ok:false,error:"AUTH_REQUIRED"},{status:401});const rows=await getDb().select({id:passkeyCredentials.credentialId,label:passkeyCredentials.label,createdAt:passkeyCredentials.createdAt,lastUsedAt:passkeyCredentials.lastUsedAt}).from(passkeyCredentials).where(eq(passkeyCredentials.accountId,account.id));return Response.json({ok:true,items:rows})}
+export async function DELETE(request:Request){if(!trustedPasskeyMutation(request,passkeySite(request)))return Response.json({ok:false,error:"UNTRUSTED_ORIGIN"},{status:403});const account=await authenticatedPasskeyAccount(request);if(!account)return Response.json({ok:false,error:"AUTH_REQUIRED"},{status:401});let body:{id?:string};try{body=await request.json()}catch{return Response.json({ok:false,error:"INVALID_REQUEST"},{status:400})}if(typeof body.id!=="string"||body.id.length>1024)return Response.json({ok:false,error:"INVALID_REQUEST"},{status:400});const db=getDb(),removed=await db.delete(passkeyCredentials).where(and(eq(passkeyCredentials.credentialId,body.id),eq(passkeyCredentials.accountId,account.id))).returning({id:passkeyCredentials.credentialId});if(!removed.length)return Response.json({ok:false,error:"PASSKEY_NOT_FOUND"},{status:404});await writeAudit(db,account,"auth.passkey_removed","auth",account.id,"کلید عبور دستگاه حذف شد.",{});return Response.json({ok:true})}

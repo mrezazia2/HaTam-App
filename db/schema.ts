@@ -74,8 +74,16 @@ export const sessions=sqliteTable("sessions",{
  id:text("id").primaryKey(),accountId:text("account_id").notNull(),tokenHash:text("token_hash").notNull().unique(),expiresAt:integer("expires_at",{mode:"timestamp_ms"}).notNull(),createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull(),
 });
 
+export const passkeyCredentials=sqliteTable("passkey_credentials",{
+ credentialId:text("credential_id").primaryKey(),accountId:text("account_id").notNull(),publicKey:text("public_key").notNull(),counter:integer("counter").notNull().default(0),transports:text("transports",{mode:"json"}).$type<string[]>().notNull(),deviceType:text("device_type").notNull(),backedUp:integer("backed_up",{mode:"boolean"}).notNull().default(false),label:text("label").notNull().default("قفل دستگاه"),createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull(),lastUsedAt:integer("last_used_at",{mode:"timestamp_ms"}),
+},table=>[index("idx_passkey_credentials_account").on(table.accountId)]);
+
+export const passkeyChallenges=sqliteTable("passkey_challenges",{
+ id:text("id").primaryKey(),accountId:text("account_id").notNull(),kind:text("kind",{enum:["register","authenticate"]}).notNull(),challenge:text("challenge").notNull(),origin:text("origin").notNull(),expiresAt:integer("expires_at",{mode:"timestamp_ms"}).notNull(),consumedAt:integer("consumed_at",{mode:"timestamp_ms"}),createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull(),
+},table=>[index("idx_passkey_challenges_account_kind").on(table.accountId,table.kind),index("idx_passkey_challenges_expires").on(table.expiresAt)]);
+
 export const authSecurityEvents=sqliteTable("auth_security_events",{
- id:text("id").primaryKey(),action:text("action",{enum:["otp_request","otp_verify","password_login"]}).notNull(),identifierHash:text("identifier_hash").notNull(),ipHash:text("ip_hash").notNull(),success:integer("success",{mode:"boolean"}).notNull().default(false),createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull(),
+ id:text("id").primaryKey(),action:text("action",{enum:["otp_request","otp_verify","password_login","passkey_login"]}).notNull(),identifierHash:text("identifier_hash").notNull(),ipHash:text("ip_hash").notNull(),success:integer("success",{mode:"boolean"}).notNull().default(false),createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull(),
 },table=>[index("idx_auth_events_identifier_action_created").on(table.identifierHash,table.action,table.createdAt),index("idx_auth_events_ip_action_created").on(table.ipHash,table.action,table.createdAt)]);
 
 export const wallets=sqliteTable("wallets",{
