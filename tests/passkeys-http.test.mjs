@@ -39,8 +39,16 @@ test('Passkey: enroll, sign in, reject replay and foreign origin, revoke',async(
  try{
   const foreign=await request('/api/auth/passkeys/register',{action:'begin'},cookie,'https://evil.example');assert.equal(foreign.status,403);
   const unauth=await request('/api/auth/passkeys/register',{action:'begin'});assert.equal(unauth.status,401);
+  const diagnosticBegin=await request('/api/auth/passkeys/register',{action:'begin'},cookie);assert.equal(diagnosticBegin.status,200);
+  const diagnostic=(await diagnosticBegin.json()).challengeId;
+  const reported=await request('/api/auth/passkeys/register',{action:'client-error',challengeId:diagnostic,name:'NotAllowedError',code:'ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY'},cookie);assert.equal(reported.status,200);
+  const repeatedReport=await request('/api/auth/passkeys/register',{action:'client-error',challengeId:diagnostic,name:'NotAllowedError'},cookie);assert.equal(repeatedReport.status,400);
+  assert.equal((await db.prepare("SELECT COUNT(*) total FROM audit_logs WHERE action='auth.passkey_client_failed'").first()).total,1);
   const begin=await request('/api/auth/passkeys/register',{action:'begin'},cookie);assert.equal(begin.status,200,await begin.clone().text());
   const registration=await begin.json(),credentialId=randomBytes(32),{publicKey,privateKey}=generateKeyPairSync('ec',{namedCurve:'prime256v1'});
+  assert.equal(registration.options.authenticatorSelection.residentKey,'required');
+  assert.equal(registration.options.authenticatorSelection.userVerification,'required');
+  assert.equal(registration.options.timeout,120000);
   const jwk=publicKey.export({format:'jwk'}),cose=cbor(new Map([[1,2],[3,-7],[-1,1],[-2,Buffer.from(jwk.x,'base64url')],[-3,Buffer.from(jwk.y,'base64url')]]));
   const rpHash=digest('hatamestate.com'),authData=Buffer.concat([rpHash,Buffer.from([0x45]),Buffer.from([0,0,0,0]),Buffer.alloc(16),Buffer.from([0,credentialId.length]),credentialId,cose]);
   const attestation=cbor(new Map([['fmt','none'],['attStmt',new Map()],['authData',authData]]));
