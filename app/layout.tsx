@@ -34,6 +34,7 @@ import "./auth/password-setup.css";
 import "./theme/release-readability.css";
 import "./theme/ui-overrides.css";
 import "./brand/scoped-appearance.css";
+import "./auth/surface-contrast.css";
 import "./pwa/pwa.css";
 import PwaInstallPrompt from "./pwa/PwaInstallPrompt";
 

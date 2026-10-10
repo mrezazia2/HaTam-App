@@ -1,0 +1,36 @@
+/* Auth headings follow the surface beneath them, not the page-wide theme. */
+.role-auth-hero :is(h1,h2),
+.auth-visual :is(h1,h2) {
+  color: #f4f7f4;
+  -webkit-text-fill-color: #f4f7f4;
+}
+
+.role-auth-hero p,
+.auth-visual p { color: #d9e5de; }
+
+.role-auth-cards { margin-top: -20px; }
+
+html[data-theme="light"] .role-auth-cards article {
+  color: #edf5f0;
+  background: #082d23;
+}
+
+html[data-theme="light"] .role-auth-cards article :is(h2,strong) {
+  color: #f4f7f4;
+  -webkit-text-fill-color: #f4f7f4;
+}
+
+html[data-theme="dark"] .role-auth-cards article :is(h2,strong) {
+  color: var(--theme-text, #edf5f0);
+  -webkit-text-fill-color: var(--theme-text, #edf5f0);
+}
+
+html[data-theme="light"] .auth-card :is(h1,h2) {
+  color: #10271f;
+  -webkit-text-fill-color: #10271f;
+}
+
+html[data-theme="dark"] .auth-card :is(h1,h2) {
+  color: var(--theme-text, #edf5f0);
+  -webkit-text-fill-color: var(--theme-text, #edf5f0);
+}
