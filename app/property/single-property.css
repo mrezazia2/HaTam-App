@@ -21,3 +21,16 @@ html[data-theme=light] .detail-request-backdrop>section,.theme-light .detail-req
 .detail-screen .detail-hero{height:auto!important;overflow:visible}.detail-hero .detail-tools{top:12px;bottom:auto}
 .single-amenities{display:flex!important;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;touch-action:pan-x pan-y;padding-inline:6px}
 .single-amenities>div{flex:0 0 104px;min-height:100px;scroll-snap-align:start}.single-amenities small{font-size:12px}.single-amenities .available{color:var(--single-text,#d7ae58)}.single-amenities .unavailable{opacity:.42}
+.detail-screen .detail-consultation,.single-property .single-actions button{display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;font:inherit;line-height:1.8;padding:10px 14px;white-space:normal}
+.detail-screen .detail-consultation svg,.single-property .single-actions button svg,.single-app-contactbar svg{position:static!important;flex:0 0 22px;width:22px;height:22px;display:block;transform:none!important;margin:0}
+html[data-theme=light] .detail-scroll :is(.detail-screen,.detail-body){background:#fff;color:#17352a}
+html[data-theme=light] .detail-screen :is(h1,h2,h3,strong,dt,dd,summary,.single-description){color:#17352a;-webkit-text-fill-color:currentColor;background-image:none}
+html[data-theme=light] .detail-screen :is(.property-area,.app-property-meta,.single-facts span,.single-price span,.single-price small,.single-rent-values span){color:#5f7269;opacity:1}
+html[data-theme=light] .detail-screen .advisor-card{background:#f1f5f2;border:1px solid #dce5df;color:#17352a}
+html[data-theme=light] .detail-screen .advisor-card span{color:#536b5e}
+html[data-theme=light] .detail-screen :is(.detail-consultation,.app-advisor-chat){background:#f3f7f4;color:#173f2e;border-color:#c7d8cd}
+html[data-theme=light] .detail-screen .single-amenities .available{color:#173f2e}
+html[data-theme=light] .detail-screen .single-amenities .unavailable{color:#697b70;opacity:.5}
+html[data-theme=light] .detail-screen .detail-notice{background:#e7f4eb;color:#174c32}
+html[data-theme=light] .single-app-contactbar{background:#fff;border-color:#dce5df}
+html[data-theme=light] .single-app-contactbar button{background:#0d5a40;color:#fff}

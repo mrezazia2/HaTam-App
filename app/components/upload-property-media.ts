@@ -17,6 +17,7 @@ export async function uploadPropertyFile(file:File,role:string):Promise<Property
  const result=await response.json();if(!response.ok)throw Error(result.error||'UPLOAD_FAILED');return result.item;
 }
 export async function flushPropertyMedia(items:PropertyMedia[],role:string,onProgress?:(items:PropertyMedia[])=>void){
- const result:PropertyMedia[]=[];
- for(const [index,item] of items.entries()){if(item.file){const uploaded=await uploadPropertyFile(item.file,role);URL.revokeObjectURL(item.url);result.push(uploaded);onProgress?.([...result,...items.slice(index+1)])}else result.push(item)}return result;
+ const result=[...items];let cursor=0;const failures:unknown[]=[];
+ const worker=async()=>{while(cursor<items.length){const index=cursor++,item=items[index];if(!item.file)continue;try{result[index]=await uploadPropertyFile(item.file,role);URL.revokeObjectURL(item.url);onProgress?.([...result])}catch(error){failures.push(error)}}};
+ await Promise.all([worker(),worker()]);if(failures.length)throw failures[0];return result;
 }

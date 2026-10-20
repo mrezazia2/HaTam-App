@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { DrawingPinIcon, HeartFilledIcon, HeartIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import SiteShell from "./SiteShell";
 import "./property-sort.css";
-import InteractiveMap,{validCoordinates} from "../components/InteractiveMap";
+import {validCoordinates} from "../components/InteractiveMap";
+import PropertyMapExplorer from '../components/PropertyMapExplorer';
 import {useMapEnabled} from "../navigation/useMapEnabled";
 
 type Property = { id:string; title:string; address:string; district?:string|null; area:number; bedrooms:number; price:number; coverImage?:string|null; featured:boolean; transactionType:string;createdAt?:string;latitude:number|null;longitude:number|null };
@@ -20,9 +21,10 @@ export default function PropertyArchive({ featuredOnly=false }: { featuredOnly?:
   <div className="site-search-bar"><MagnifyingGlassIcon/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="جست‌وجو بر اساس عنوان، محله یا منطقه…"/></div>
   <div className="site-property-sort" role="group" aria-label="مرتب‌سازی املاک">{sortOptions.map(([value,label])=><button key={value} type="button" className={sort===value?"active":""} aria-pressed={sort===value} onClick={()=>setSort(value)}>{label}</button>)}</div>
   {mapEnabled&&<div className="site-map-toolbar"><button onClick={()=>setMapOpen(v=>!v)}>{mapOpen?"بستن نقشه":"نمایش روی نقشه"}</button><span>{rows.filter(p=>validCoordinates(p.latitude,p.longitude)).length.toLocaleString("fa-IR")} ملک با موقعیت ثبت‌شده</span></div>}
-  <div className={mapOpen&&mapEnabled?"site-map-layout":""}>
+  <div>
+  {mapOpen&&mapEnabled?<PropertyMapExplorer items={rows} onOpen={id=>location.assign(`/property/${encodeURIComponent(id)}`)}/>:<>
   {loading?<div className="site-empty">در حال دریافت فایل‌ها…</div>:<div className="site-property-grid">{rows.map(p=><article key={p.id}><Link href={`/property/${p.id}`} className="site-property-image"><img src={p.coverImage||"/assets/hatam/luxury-living.webp"} alt={p.title}/>{p.featured&&<b>ویژه</b>}</Link><div><div className="site-property-title"><Link href={`/property/${p.id}`}>{p.title}</Link><button onClick={()=>toggle(p.id)} aria-label="علاقه‌مندی">{favorites.includes(p.id)?<HeartFilledIcon/>:<HeartIcon/>}</button></div><p><DrawingPinIcon/>{p.address}</p><small>{p.area.toLocaleString("fa-IR",{useGrouping:false})} متر · {p.bedrooms.toLocaleString("fa-IR",{useGrouping:false})} خواب</small><strong>{p.price.toLocaleString("fa-IR")} تومان</strong></div></article>)}</div>}
-  {mapOpen&&mapEnabled&&<InteractiveMap points={rows.map(p=>({id:p.id,latitude:p.latitude,longitude:p.longitude,label:p.price.toLocaleString("fa-IR")+" تومان"}))} onSelect={id=>location.assign(`/property/${encodeURIComponent(id)}`)} height={620}/>}</div>
+  </>}</div>
   {!loading&&!rows.length&&<div className="site-empty">فایل منطبق و منتشرشده‌ای پیدا نشد.</div>}{message&&<div className="site-toast">{message}</div>}
  </SiteShell>
 }

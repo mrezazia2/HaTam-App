@@ -1,0 +1,15 @@
+"use client";
+import {useMemo,useRef,useState} from 'react';
+import {Cross2Icon,DrawingPinIcon} from '@radix-ui/react-icons';
+import InteractiveMap,{validCoordinates,type MapViewport} from './InteractiveMap';
+import './property-map-explorer.css';
+export type ExplorerProperty={id:string;title:string;address:string;price:number;area:number;bedrooms:number;latitude:number|null;longitude:number|null;coverImage?:string|null};
+export const mapPrice=(price:number)=>price>=1e9?(price/1e9).toLocaleString('fa-IR',{maximumFractionDigits:2})+' میلیارد':price>=1e6?(price/1e6).toLocaleString('fa-IR',{maximumFractionDigits:1})+' میلیون':price.toLocaleString('fa-IR')+' تومان';
+export default function PropertyMapExplorer({items,onOpen,mobile=false}:{items:ExplorerProperty[];onOpen:(id:string)=>void;mobile?:boolean}){
+ const [viewport,setViewport]=useState<MapViewport|null>(null),[selected,setSelected]=useState<string|null>(null),cards=useRef<HTMLDivElement>(null);
+ const located=useMemo(()=>items.filter(p=>validCoordinates(p.latitude,p.longitude)),[items]);
+ const visible=useMemo(()=>located.filter(p=>!viewport||(p.latitude!>=viewport.south&&p.latitude!<=viewport.north&&p.longitude!>=viewport.west&&p.longitude!<=viewport.east)),[located,viewport]);
+ const choose=(id:string)=>{setSelected(id);const card=cards.current?.querySelector<HTMLElement>(`[data-property-id="${CSS.escape(id)}"]`);card?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'})};
+ const list=visible;
+ return <section className={`property-map-explorer ${mobile?'is-app':''}`} aria-label="جست‌وجوی املاک روی نقشه"><div className="property-map-canvas"><InteractiveMap points={located.map(p=>({...p,label:mapPrice(p.price)}))} selectedId={selected} onSelect={choose} onViewportChange={setViewport} height={mobile?620:680}/><div className="property-map-count" role="status">{visible.length.toLocaleString('fa-IR')} ملک در این محدوده</div>{selected&&<button className="map-clear-selection" onClick={()=>setSelected(null)}><Cross2Icon/>بستن پیش‌نمایش</button>}</div><aside className={selected?'has-selection':''} aria-label="املاک محدوده نقشه"><header><strong>فایل‌های این محدوده</strong><span>{visible.length.toLocaleString('fa-IR')} ملک</span></header><div className="property-map-cards" ref={cards}>{list.map(p=><article data-property-id={p.id} className={selected===p.id?'is-selected':''} key={p.id}><button type="button" onClick={()=>onOpen(p.id)} aria-label={`مشاهده ${p.title}`}><img src={p.coverImage||'/assets/hatam/luxury-living.webp'} alt="" loading="lazy"/><div><h3>{p.title}</h3><p><DrawingPinIcon/>{p.address}</p><small>{p.area.toLocaleString('fa-IR')} متر · {p.bedrooms.toLocaleString('fa-IR')} خواب</small><strong>{p.price.toLocaleString('fa-IR')} تومان</strong></div></button></article>)}</div>{!visible.length&&<p className="map-empty">در این محدوده ملکی با موقعیت ثبت‌شده پیدا نشد. نقشه را جابه‌جا کنید یا زوم را کاهش دهید.</p>}</aside>{items.length>located.length&&<small className="map-missing-location">{(items.length-located.length).toLocaleString('fa-IR')} فایل بدون موقعیت دقیق فقط در نمایش لیست موجود است.</small>}</section>;
+}

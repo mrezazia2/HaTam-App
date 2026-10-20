@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+test('map lists track viewport, previews do not navigate and app uses horizontal cards',async()=>{const source=await readFile('app/components/PropertyMapExplorer.tsx','utf8'),map=await readFile('app/components/InteractiveMap.tsx','utf8'),css=await readFile('app/components/property-map-explorer.css','utf8');assert.match(source,/onViewportChange=\{setViewport\}/);assert.match(source,/onSelect=\{choose\}/);assert.match(map,/fitted.current!==pointKey/);assert.match(map,/zoom<15/);assert.match(css,/scroll-snap-type:x mandatory/)});
+test('map manual filters and OTP portal resume submission automatically',async()=>{const app=await readFile('app/Prototype.tsx','utf8'),otp=await readFile('app/auth/InlinePropertyVerification.tsx','utf8');assert.match(app,/onClick=\{openManualFilter\}/);assert.match(app,/filterReturn.current="search"/);assert.match(app,/placeholder="13\.\."/);assert.match(otp,/createPortal/);assert.match(otp,/code.length===4/);assert.match(otp,/void send\(\)/);assert.match(app,/await submit\(true\);setVerifyForSubmit\(false\)/)});
