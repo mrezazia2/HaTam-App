@@ -40,6 +40,9 @@ test('VPS production HTTP: public routes, authenticated panels and blocked previ
  const {server,port}=await startProdServer({host:'127.0.0.1',port:0,outDir:resolve('dist')});
  const request=(path,options={})=>fetch(`http://127.0.0.1:${port}${path}`,{...options,redirect:'manual'});
  try{
+ const publicConsultant=await request('/api/consultants?id=consultant');assert.equal(publicConsultant.status,200);const publicConsultantBody=await publicConsultant.json();assert.equal(publicConsultantBody.item.mobile,'09120000002');assert.equal(publicConsultantBody.item.id,'consultant');assert.equal(publicConsultantBody.item.passwordHash,undefined);
+ const nonConsultant=await request('/api/consultants?id=user');assert.equal(nonConsultant.status,404);await nonConsultant.arrayBuffer();
+ const absentConsultant=await request('/api/consultants?id=absent');assert.equal(absentConsultant.status,404);await absentConsultant.arrayBuffer();
  const badValuation=await request('/api/consultations',{method:'POST',headers:{cookie:cookies.user,'content-type':'application/json'},body:JSON.stringify({kind:'valuation',valuation:{}})});assert.equal(badValuation.status,400);await badValuation.arrayBuffer();
  const validValuation={name:'مالک آزمایشی',mobile:'09120000001',address:'تهران منطقه ۱۳، آدرس کامل',area:'80',year:'1400',bedrooms:2,floor:1,units:2,price:'5000000000',amenities:['پارکینگ']};
  const valuationCreated=await request('/api/consultations',{method:'POST',headers:{cookie:cookies.user,'content-type':'application/json'},body:JSON.stringify({kind:'valuation',valuation:validValuation})});assert.equal(valuationCreated.status,201,await valuationCreated.clone().text());const valuationId=(await valuationCreated.json()).id;

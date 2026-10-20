@@ -8,10 +8,11 @@ test('app routes retain property identifiers and restore detail on history navig
  assert.match(prototype,/const allowed:Screen\[\]=\["vip","valuation","consultant-properties","detail"/);
  assert.match(prototype,/p.get\("screen"\)==="detail"&&id/);
 });
-test('consultant entry points preserve the app surface for guests, chat and listings',()=>{
+test('consultant directory links to app profiles, telephone and listings',()=>{
  assert.match(consultants,/screen=consultant-properties&consultantId=/);
- assert.match(consultants,/inApp\?"\/app\?screen=login":"\/login\/user"/);
- assert.match(consultants,/inApp\?"\/app\?screen=profile&":"\/panel\?"/);
+ assert.match(consultants,/screen=consultant-profile&consultantId=/);
+ assert.match(consultants,/tel:/);
+ assert.doesNotMatch(consultants,/شروع گفت‌وگو/);
 });
 test('app valuation is distinct from map search and AI recommendations link to details',()=>{
  assert.match(prototype,/goSearch=\{\(\) => setScreen\("valuation"\)\}/);
