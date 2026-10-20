@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Cross2Icon, ImageIcon, UploadIcon, VideoIcon } from "@radix-ui/react-icons";
 import "./property-media-uploader.css";
+import {uploadPropertyFile} from './upload-property-media';
 
-export type PropertyMedia = { key: string; url: string; name: string; type: string; size: number };
+export type PropertyMedia = { key: string; url: string; name: string; type: string; size: number; file?:File };
 type UploadSettings = { imageMaxMb: number; videoMaxMb: number; maxPropertyFiles: number; allowedExtensions: string[] };
 const fallback: UploadSettings = { imageMaxMb: 15, videoMaxMb: 100, maxPropertyFiles: 12, allowedExtensions: ["jpg", "jpeg", "png", "webp", "mp4", "webm", "mov", "m4v", "avi", "mkv"] };
 
-export default function PropertyMediaUploader({ role, value, onChange }: { role: "admin" | "user" | "consultant" | "agency"; value: PropertyMedia[]; onChange: (items: PropertyMedia[]) => void }) {
+export default function PropertyMediaUploader({ role, value, onChange,guest=false }: { role: "admin" | "user" | "consultant" | "agency"; value: PropertyMedia[]; onChange: (items: PropertyMedia[]) => void;guest?:boolean }) {
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -22,13 +23,17 @@ export default function PropertyMediaUploader({ role, value, onChange }: { role:
     setError("");
     const created: PropertyMedia[] = [];
     try {
-      for (const file of Array.from(files).slice(0, settings.maxPropertyFiles - value.length)) {
-        const data = new FormData();
-        data.set("file", file);
-        const response = await fetch("/api/property-media", { method: "POST", headers: { "x-hatam-preview-role": role }, body: data });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "UPLOAD_FAILED");
-        created.push(result.item);
+      const selected=Array.from(files).slice(0,settings.maxPropertyFiles-value.length);
+      for(let offset=0;offset<selected.length;offset+=2){
+        const results=await Promise.allSettled(selected.slice(offset,offset+2).map(async file=>{
+          const extension=file.name.split('.').pop()?.toLowerCase()||'';
+          if(!mediaExtensions.includes(extension))throw Error('FILE_TYPE_NOT_ALLOWED');
+          if(file.size>(file.type.startsWith('video/')?settings.videoMaxMb:settings.imageMaxMb)*1024*1024)throw Error('FILE_TOO_LARGE');
+          if(guest)return {key:`local-${crypto.randomUUID()}`,url:URL.createObjectURL(file),name:file.name,type:file.type||(['mp4','webm','mov','m4v','avi','mkv'].includes(extension)?'video/mp4':'image/jpeg'),size:file.size,file};
+          return uploadPropertyFile(file,role);
+        }));
+        for(const result of results)if(result.status==='fulfilled')created.push(result.value);
+        const failed=results.find(result=>result.status==='rejected');if(failed?.status==='rejected')throw failed.reason;
       }
     } catch (reason) {
       const code = reason instanceof Error ? reason.message : "";
@@ -40,6 +45,7 @@ export default function PropertyMediaUploader({ role, value, onChange }: { role:
     }
   };
   const remove = async (item: PropertyMedia) => {
+    if(item.file){URL.revokeObjectURL(item.url);onChange(value.filter(entry=>entry.key!==item.key));return}
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
@@ -58,6 +64,7 @@ export default function PropertyMediaUploader({ role, value, onChange }: { role:
   const makeCover = (item: PropertyMedia) => onChange([item, ...value.filter(entry => entry.key !== item.key)]);
   const coverKey = value.find(item => item.type.startsWith("image/"))?.key;
   return <section className="property-media-uploader" dir="rtl">
+    {guest&&<p>فایل‌ها فعلاً روی همین دستگاه آماده می‌شوند؛ در ثبت نهایی، پس از تأیید شماره، به سرور ارسال می‌شوند. این صفحه را نبندید.</p>}
     <label><UploadIcon /><strong>{busy ? "در حال بارگذاری..." : "افزودن عکس و ویدیو ملک"}</strong><small>حداکثر {settings.maxPropertyFiles.toLocaleString("fa-IR")} فایل؛ تصویر تا {settings.imageMaxMb.toLocaleString("fa-IR")} و ویدیو تا {settings.videoMaxMb.toLocaleString("fa-IR")} مگابایت</small><input disabled={busy || value.length >= settings.maxPropertyFiles} type="file" accept={mediaExtensions.map(extension => `.${extension}`).join(",")} multiple onChange={event => { void upload(event.target.files); event.target.value = ""; }} /></label>
     {value.length > 0 && <div className="property-media-grid">{value.map(item => <article key={item.key}>
       {item.type.startsWith("video") ? <video src={item.url} controls preload="metadata" /> : <img src={item.url} alt={item.name} />}

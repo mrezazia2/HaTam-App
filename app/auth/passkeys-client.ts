@@ -21,12 +21,12 @@ export async function enrollPasskey(label="قفل دستگاه"){
  return postPasskey("/api/auth/passkeys/register",{action:"finish",challengeId:start.challengeId,response,label});
 }
 
-export async function signInWithPasskey(mobile:string,role:"user"|"consultant"|"agency"){
+export async function signInWithPasskey(mobile:string,role:"user"|"consultant"|"agency",surface?:"app"){
  if(!passkeySupported())throw new Error("PASSKEY_UNSUPPORTED");
  const {startAuthentication}=await import("@simplewebauthn/browser");
  const start=await postPasskey("/api/auth/passkeys/login",{action:"begin",mobile,role});
  const response=await startAuthentication({optionsJSON:start.options});
- return postPasskey("/api/auth/passkeys/login",{action:"finish",challengeId:start.challengeId,response});
+ return postPasskey("/api/auth/passkeys/login",{action:"finish",challengeId:start.challengeId,response,surface});
 }
 
 export function passkeyMessage(error:unknown){

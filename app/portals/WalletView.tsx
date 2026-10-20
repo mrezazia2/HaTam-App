@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CardStackIcon } from "@radix-ui/react-icons";
 import type { PortalKind } from "./PortalExperience";
+import {asciiDigits} from "../auth/digits";
 
 type Data = {
   wallet: { id: string; balance: number; currency: string };
@@ -23,7 +24,7 @@ export default function WalletView({ kind, notify }: { kind: PortalKind; notify:
   const headers = { "x-hatam-preview-role": kind };
   const load = () => fetch("/api/wallet", { headers }).then(r => r.ok ? r.json() : Promise.reject()).then(setData).catch(() => notify("دریافت کیف پول انجام نشد."));
 
-  useEffect(load, [kind]);
+  useEffect(()=>{void load()}, [kind]);
 
   const submit = async () => {
     if (!mode) return;
@@ -61,7 +62,7 @@ export default function WalletView({ kind, notify }: { kind: PortalKind; notify:
   const onlineAvailable=data.paymentMethods?.some(method=>method.category==="payment_gateway"&&method.enabled)??false;
   return <section className="portal-wallet">
     <article className="wallet-balance"><div><span>موجودی قابل استفاده</span><strong>{money(data.wallet.balance)}</strong><p>شماره کیف پول: {data.wallet.id}</p></div><CardStackIcon/><div>{onlineAvailable?<button onClick={() => setMode("online")}>افزایش موجودی آنلاین</button>:<span>درگاه پرداخت آنلاین فعلاً غیرفعال است.</span>}<button onClick={() => setMode("card-transfer")}>ثبت کارت‌به‌کارت</button>{kind !== "user" && <button onClick={() => setMode("settlement")}>درخواست تسویه</button>}</div></article>
-    {mode && <div className="wallet-operation"><strong>{mode === "online" ? "پرداخت آنلاین" : mode === "card-transfer" ? "ثبت رسید کارت‌به‌کارت" : "درخواست تسویه"}</strong><input aria-label="مبلغ به تومان" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value.replace(/\D/g, ""))} placeholder="مبلغ به تومان"/>{mode === "card-transfer" && <input value={detail} onChange={e => setDetail(e.target.value)} placeholder="کد پیگیری بانکی"/>}{mode === "settlement" && <input dir="ltr" value={detail} onChange={e => setDetail(e.target.value.toUpperCase())} placeholder="IR000000000000000000000000"/>}<button disabled={busy} onClick={submit}>{busy ? "در حال اتصال..." : "تأیید عملیات"}</button><button onClick={() => setMode(null)}>انصراف</button></div>}
+    {mode && <div className="wallet-operation"><strong>{mode === "online" ? "پرداخت آنلاین" : mode === "card-transfer" ? "ثبت رسید کارت‌به‌کارت" : "درخواست تسویه"}</strong><input aria-label="مبلغ به تومان" inputMode="numeric" value={amount?Number(amount).toLocaleString("fa-IR"):""} onChange={e => setAmount(asciiDigits(e.target.value))} placeholder="مبلغ به تومان"/>{mode === "card-transfer" && <input value={detail} onChange={e => setDetail(e.target.value)} placeholder="کد پیگیری بانکی"/>}{mode === "settlement" && <input dir="ltr" value={detail} onChange={e => setDetail(e.target.value.toUpperCase())} placeholder="IR000000000000000000000000"/>}<button disabled={busy} onClick={submit}>{busy ? "در حال اتصال..." : "تأیید عملیات"}</button><button onClick={() => setMode(null)}>انصراف</button></div>}
     <div className="wallet-grid"><article className="portal-card"><div className="portal-card-head"><div><span>گردش مالی واقعی</span><h2>تراکنش‌های اخیر</h2></div></div><div className="wallet-transactions">{data.transactions.map(item => <button key={item.id}><span><strong>{item.description}</strong><small>{new Date(item.createdAt).toLocaleString("fa-IR")} · {item.status}</small></span><b className={item.type === "credit" || item.type === "release" ? "credit" : "debit"}>{item.type === "hold" ? "رزرو " : item.type === "credit" || item.type === "release" ? "+" : "−"}{money(item.amount)}</b></button>)}{!data.transactions.length && <div className="portal-empty">هنوز تراکنشی ثبت نشده است.</div>}</div></article><article className="portal-card wallet-account"><span>عملیات در انتظار</span><h2>{(data.receipts.length + data.settlements.length).toLocaleString("fa-IR")} درخواست</h2>{data.receipts.slice(0, 3).map(x => <p key={x.id}>رسید {x.trackingCode} · {x.status}</p>)}{data.settlements.slice(0, 3).map(x => <p key={x.id}>تسویه {money(x.amount)} · {x.status}</p>)}</article></div>
   </section>;
 }

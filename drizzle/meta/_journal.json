@@ -211,6 +211,13 @@
       "when": 1791620000000,
       "tag": "0029_passkeys",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
+      "when": 1792320000000,
+      "tag": "0030_cooperate_applications",
+      "breakpoints": true
     }
   ]
 }

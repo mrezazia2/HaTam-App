@@ -6,6 +6,7 @@ import { hashValue, isLocalRequest, normalizeMobile, sessionCookie } from "../..
 import {authRateLimited,recordAuthEvent} from "../../_lib/auth-security";
 import {writeAudit} from "../../_lib/audit";
 import {asciiNumerals} from "../../../auth/digits";
+import {loginDestination} from "../../_lib/navigation";
 
 export const dynamic="force-dynamic";
 const destinations={user:"/panel",consultant:"/consultant",agency:"/agency"} as const;
@@ -13,7 +14,7 @@ const destinations={user:"/panel",consultant:"/consultant",agency:"/agency"} as 
 export async function POST(request:Request){if(!trustedMutation(request))return Response.json({ok:false,error:"UNTRUSTED_ORIGIN"},{status:403});
  let input:unknown;try{input=await request.json()}catch{return Response.json({ok:false,error:"INVALID_REQUEST"},{status:400})}
  if(!input||typeof input!=="object"||Array.isArray(input))return Response.json({ok:false,error:"INVALID_REQUEST"},{status:400});
- const body=input as {challengeId?:string;mobile?:string;role?:keyof typeof destinations;mode?:"login"|"register";code?:string};
+ const body=input as {challengeId?:string;mobile?:string;role?:keyof typeof destinations;mode?:"login"|"register";code?:string;surface?:string};
  if(typeof body.mobile!=="string"||body.mobile.length>20||typeof body.challengeId!=="string"||body.challengeId.length>100||typeof body.code!=="string"||!/^\d{4}$/.test(asciiNumerals(body.code))||!Object.hasOwn(destinations,body.role||"")||!["login","register"].includes(body.mode||""))return Response.json({ok:false,error:"INVALID_REQUEST"},{status:400});
  const mobile=normalizeMobile(body.mobile);
  if(!mobile||!body.challengeId||!body.role)return Response.json({ok:false,error:"INVALID_REQUEST"},{status:400});
@@ -38,5 +39,5 @@ export async function POST(request:Request){if(!trustedMutation(request))return 
  if(!account&&body.mode==="login")return Response.json({ok:false,error:"ACCOUNT_NOT_FOUND"},{status:404});
  if(!account){const accountId=`${body.role==="user"?"U":body.role==="consultant"?"C":"AU"}-${crypto.randomUUID()}`;const status=body.role==="user"?"active":"pending";await db.insert(accounts).values({id:accountId,role:body.role,name:`کاربر ${mobile}`,mobile,address:"",status,createdAt:timestamp,updatedAt:timestamp});if(body.role==="agency")await db.insert(agencies).values({id:`A-${crypto.randomUUID()}`,name:`آژانس ${mobile}`,managerAccountId:accountId,phone:mobile,address:"",status:"pending",createdAt:timestamp,updatedAt:timestamp});await db.insert(wallets).values({id:`W-${crypto.randomUUID()}`,accountId,balance:0,currency:"IRT",createdAt:timestamp,updatedAt:timestamp});account=(await db.select().from(accounts).where(eq(accounts.id,accountId)).limit(1))[0]}
  await db.delete(sessions).where(lte(sessions.expiresAt,timestamp));const token=crypto.randomUUID()+crypto.randomUUID();await db.insert(sessions).values({id:`S-${crypto.randomUUID()}`,accountId:account.id,tokenHash:await hashValue(token),expiresAt:new Date(Date.now()+30*24*60*60_000),createdAt:timestamp});const activeSessions=await db.select({id:sessions.id}).from(sessions).where(eq(sessions.accountId,account.id)).orderBy(desc(sessions.createdAt)).limit(20);if(activeSessions.length>5)await db.delete(sessions).where(inArray(sessions.id,activeSessions.slice(5).map(x=>x.id)));await writeAudit(db,account,"auth.otp_signed_in","auth",account.id,"ورود با کد یک‌بارمصرف انجام شد.",{role:account.role});
- return Response.json({ok:true,status:account.status,destination:account.status==="active"?destinations[body.role]:null},{headers:{"set-cookie":sessionCookie(token,!isLocalRequest(request))}});
+ return Response.json({ok:true,status:account.status,destination:account.status==="active"?await loginDestination(request,body.role,body.surface):null},{headers:{"set-cookie":sessionCookie(token,!isLocalRequest(request))}});
 }

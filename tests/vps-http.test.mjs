@@ -40,6 +40,59 @@ test('VPS production HTTP: public routes, authenticated panels and blocked previ
  const {server,port}=await startProdServer({host:'127.0.0.1',port:0,outDir:resolve('dist')});
  const request=(path,options={})=>fetch(`http://127.0.0.1:${port}${path}`,{...options,redirect:'manual'});
  try{
+ const badValuation=await request('/api/consultations',{method:'POST',headers:{cookie:cookies.user,'content-type':'application/json'},body:JSON.stringify({kind:'valuation',valuation:{}})});assert.equal(badValuation.status,400);await badValuation.arrayBuffer();
+ const validValuation={name:'مالک آزمایشی',mobile:'09120000001',address:'تهران منطقه ۱۳، آدرس کامل',area:'80',year:'1400',bedrooms:2,floor:1,units:2,price:'5000000000',amenities:['پارکینگ']};
+ const valuationCreated=await request('/api/consultations',{method:'POST',headers:{cookie:cookies.user,'content-type':'application/json'},body:JSON.stringify({kind:'valuation',valuation:validValuation})});assert.equal(valuationCreated.status,201,await valuationCreated.clone().text());const valuationId=(await valuationCreated.json()).id;
+ const valuationRow=await db.prepare('SELECT notes,subject FROM consultations WHERE id=?').bind(valuationId).first();assert.match(valuationRow.notes,/قیمت مدنظر \(تومان\): 5000000000/);assert.equal(valuationRow.subject,'درخواست قیمت‌گذاری ملک');
+ await db.prepare("UPDATE properties SET featured=1 WHERE id='public'").run();
+ const onlyFeatured=await request('/api/properties?featured=1');const featuredRows=(await onlyFeatured.json()).items;assert.deepEqual(featuredRows.map(x=>x.id),['public']);
+ const filteredFeatured=await request('/api/properties?featured=1&minPrice=999999999999');assert.equal((await filteredFeatured.json()).items.length,0);
+ const chunkInit=await request('/api/property-media/chunks?action=init',{method:'POST',headers:{cookie:cookies.user,'content-type':'application/json'},body:JSON.stringify({name:'parts.mp4',type:'video/mp4',size:9})});assert.equal(chunkInit.status,200,await chunkInit.clone().text());const chunkSession=await chunkInit.json();
+ const foreignPart=await request(`/api/property-media/chunks?action=part&id=${encodeURIComponent(chunkSession.id)}&part=0`,{method:'POST',headers:{cookie:cookies.consultant},body:'123456789'});assert.equal(foreignPart.status,404);await foreignPart.arrayBuffer();
+ const incompleteChunk=await request(`/api/property-media/chunks?action=complete&id=${encodeURIComponent(chunkSession.id)}`,{method:'POST',headers:{cookie:cookies.user}});assert.equal(incompleteChunk.status,409);await incompleteChunk.arrayBuffer();
+ const chunkPart=await request(`/api/property-media/chunks?action=part&id=${encodeURIComponent(chunkSession.id)}&part=0`,{method:'POST',headers:{cookie:cookies.user},body:'123456789'});assert.equal(chunkPart.status,200);await chunkPart.arrayBuffer();
+ const chunkComplete=await request(`/api/property-media/chunks?action=complete&id=${encodeURIComponent(chunkSession.id)}`,{method:'POST',headers:{cookie:cookies.user}});assert.equal(chunkComplete.status,201,await chunkComplete.clone().text());const chunkItem=(await chunkComplete.json()).item;
+ const chunkRead=await request(chunkItem.url,{headers:{cookie:cookies.user}});assert.equal(await chunkRead.text(),'123456789');
+ const chunkGuest=await request(chunkItem.url);assert.equal(chunkGuest.status,403);await chunkGuest.arrayBuffer();
+ const multiBytes=Buffer.alloc(4*1024*1024+9,7);const multiInit=await request('/api/property-media/chunks?action=init',{method:'POST',headers:{cookie:cookies.user,'content-type':'application/json'},body:JSON.stringify({name:'multi.mp4',type:'video/mp4',size:multiBytes.length})});assert.equal(multiInit.status,200);const multiSession=await multiInit.json();
+ for(let i=0;i<multiSession.parts;i++){const part=await request(`/api/property-media/chunks?action=part&id=${encodeURIComponent(multiSession.id)}&part=${i}`,{method:'POST',headers:{cookie:cookies.user},body:multiBytes.subarray(i*multiSession.partSize,(i+1)*multiSession.partSize)});assert.equal(part.status,200);await part.arrayBuffer()}
+ const multiComplete=await request(`/api/property-media/chunks?action=complete&id=${encodeURIComponent(multiSession.id)}`,{method:'POST',headers:{cookie:cookies.user}});assert.equal(multiComplete.status,201,await multiComplete.clone().text());const multiItem=(await multiComplete.json()).item;const multiRead=await request(multiItem.url,{headers:{cookie:cookies.user}});assert.deepEqual(Buffer.from(await multiRead.arrayBuffer()),multiBytes);
+ const invalidUrgent=await request('/api/urgent-sales',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({firstName:'Test',lastName:'Owner',mobile:'09120000001',address:'Tehran district 13',area:'bad',buildingAge:1400,expectedPrice:5000000})});assert.equal(invalidUrgent.status,400);await invalidUrgent.arrayBuffer();
+ const wrongRole=await request('/api/consultations',{method:'POST',headers:{cookie:cookies.consultant,'content-type':'application/json'},body:JSON.stringify({subject:'Valuation'})});assert.equal(wrongRole.status,403);assert.equal((await wrongRole.json()).error,'CUSTOMER_ROLE_REQUIRED');
+ const missingCustomer=await request('/api/consultations',{method:'POST',headers:{cookie:cookies.admin,'content-type':'application/json'},body:JSON.stringify({subject:'Valuation'})});assert.equal(missingCustomer.status,400);assert.equal((await missingCustomer.json()).error,'CUSTOMER_REQUIRED');
+ const cooperationPayload={firstName:'Test',lastName:'Applicant',mobile:'09120000001',age:'30',hasExperience:false};
+ const applications=await Promise.all(Array.from({length:8},()=>request('/api/cooperate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(cooperationPayload)})));
+ for(const response of applications){assert.equal(response.status,200,await response.clone().text());await response.arrayBuffer()}
+ assert.equal((await db.prepare('SELECT COUNT(*) total FROM cooperate_applications').first()).total,8);
+ assert.equal((await db.prepare("SELECT COUNT(*) total FROM audit_logs WHERE action='cooperate_application.created'").first()).total,8);
+ const adminApplications=await request('/api/admin/cooperate',{headers:{cookie:cookies.admin}});assert.equal(adminApplications.status,200);assert.equal((await adminApplications.json()).applications.length,8);
+ // VIP access is enforced by the server, not just the membership screen.
+ const vipPayload={firstName:'رضا',lastName:'آزمایشی',minPrice:'۵۰۰۰۰۰۰۰۰۰',maxPrice:'۶۰۰۰۰۰۰۰۰۰',regions:['13'],amenities:['پارکینگ']};
+ const vipPost=()=>request('/api/vip',{method:'POST',headers:{cookie:cookies.user,'content-type':'application/json'},body:JSON.stringify(vipPayload)});
+ const vipBlocked=await vipPost();assert.equal(vipBlocked.status,403);await vipBlocked.arrayBuffer();
+ await db.prepare("INSERT INTO subscriptions(id,account_id,plan_id,status,starts_at,expires_at,created_at,updated_at) VALUES ('vip-fixture','user','PLAN-USER','active',?,?,?,?)").bind(Date.now()-1000,Date.now()+86400000,Date.now(),Date.now()).run();
+ const vipAccess=await request('/api/vip',{headers:{cookie:cookies.user}});assert.equal((await vipAccess.json()).member,true);
+ const vipCreated=await vipPost();assert.equal(vipCreated.status,201,await vipCreated.clone().text());const vipId=(await vipCreated.json()).id;
+ const vipImage=new FormData();vipImage.set('file',new Blob([Uint8Array.from([255,216,255,217])],{type:'image/jpeg'}),'vip.jpg');
+ const vipUpload=await request('/api/property-media',{method:'POST',headers:{cookie:cookies.admin},body:vipImage});assert.equal(vipUpload.status,201);const vipMedia=(await vipUpload.json()).item;
+ const vipProperty=await request('/api/properties',{method:'POST',headers:{cookie:cookies.admin,'content-type':'application/json'},body:JSON.stringify({title:'VIP exclusive fixture',address:'VIP test address',transactionType:'sale',area:90,price:6000000000,latitude:35.7,longitude:51.4,description:JSON.stringify({internalPrice:100,name:'Private owner',amenities:['پارکینگ']}),mediaKeys:[vipMedia.key]})});assert.equal(vipProperty.status,201);const vipPropertyId=(await vipProperty.json()).id;
+ const markVip=await request(`/api/properties/${vipPropertyId}`,{method:'PATCH',headers:{cookie:cookies.admin,'content-type':'application/json'},body:'{"status":"vip"}'});assert.equal(markVip.status,200);await markVip.arrayBuffer();
+ const publicInventory=await request('/api/properties');assert.equal((await publicInventory.json()).items.some(x=>x.id===vipPropertyId),false);
+ const guestVip=await request(`/api/properties/${vipPropertyId}`);assert.equal(guestVip.status,404);await guestVip.arrayBuffer();
+ const guestVipMedia=await request(`/api/property-media?key=${encodeURIComponent(vipMedia.key)}`);assert.equal(guestVipMedia.status,403);await guestVipMedia.arrayBuffer();
+ const memberVip=await request(`/api/properties/${vipPropertyId}`,{headers:{cookie:cookies.user}});assert.equal(memberVip.status,200);const safeVip=(await memberVip.json()).item;assert.equal('ownerMobile' in safeVip,false);assert.equal(safeVip.description.includes('internalPrice'),false);
+ const memberInventory=await request('/api/vip',{headers:{cookie:cookies.user}});assert.equal((await memberInventory.json()).items.some(x=>x.id===vipPropertyId),true);
+ const memberVipMedia=await request(`/api/property-media?key=${encodeURIComponent(vipMedia.key)}`,{headers:{cookie:cookies.user}});assert.equal(memberVipMedia.status,200);assert.equal(memberVipMedia.headers.get('cache-control'),'private, no-store');await memberVipMedia.arrayBuffer();
+ const vipFavorite=await request('/api/favorites',{method:'POST',headers:{cookie:cookies.user,'content-type':'application/json'},body:JSON.stringify({propertyId:vipPropertyId})});assert.equal(vipFavorite.status,201);await vipFavorite.arrayBuffer();
+ const cannotPromote=await request('/api/properties/public',{method:'PATCH',headers:{cookie:cookies.user,'content-type':'application/json'},body:'{"status":"vip"}'});assert.equal(cannotPromote.status,400);await cannotPromote.arrayBuffer();
+ assert.equal((await db.prepare('SELECT request_type FROM property_requests WHERE id=?').bind(vipId).first()).request_type,'buy');
+ assert.equal((await db.prepare("SELECT COUNT(*) total FROM audit_logs WHERE action='vip.request_created' AND entity_id=?").bind(vipId).first()).total,1);
+ await db.prepare("UPDATE subscriptions SET expires_at=? WHERE id='vip-fixture'").bind(Date.now()-1000).run();
+ const vipExpired=await vipPost();assert.equal(vipExpired.status,403);await vipExpired.arrayBuffer();
+ const expiredDetail=await request(`/api/properties/${vipPropertyId}`,{headers:{cookie:cookies.user}});assert.equal(expiredDetail.status,404);await expiredDetail.arrayBuffer();
+ const expiredMedia=await request(`/api/property-media?key=${encodeURIComponent(vipMedia.key)}`,{headers:{cookie:cookies.user}});assert.equal(expiredMedia.status,403);await expiredMedia.arrayBuffer();
+ const expiredInventory=await request('/api/vip',{headers:{cookie:cookies.user}});assert.equal((await expiredInventory.json()).items.length,0);
+ const expiredFavorites=await request('/api/favorites',{headers:{cookie:cookies.user}});assert.equal((await expiredFavorites.json()).items.some(x=>x.property.id===vipPropertyId),false);
   for(const path of ['/','/app','/api/system/health']){const r=await request(path);assert.equal(r.status,200,path);await r.arrayBuffer();}
   const disabledUpload=await request('/api/admin/upload-settings',{method:'POST',headers:{cookie:cookies.admin,'content-type':'application/json'},body:JSON.stringify({imageMaxMb:8,videoMaxMb:25,documentMaxMb:12,maxPropertyFiles:8,allowedExtensions:[]})});assert.equal(disabledUpload.status,200);assert.deepEqual((await disabledUpload.json()).settings.allowedExtensions,[]);
   const noVideoForm=new FormData();noVideoForm.set('video',new Blob([Uint8Array.from([0,0,0,1])],{type:'video/mp4'}),'sample.mp4');

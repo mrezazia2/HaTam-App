@@ -351,6 +351,9 @@ export function MobileScroll({ className, children }: MobileScrollProps) {
   }, [pushDragSample, releaseVelocity, springBack, startMomentum, suppressUpcomingClick]);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    // Let Safari own touch scrolling and native select gestures. The custom
+    // pointer capture is only for desktop mouse/pen simulation.
+    if (event.pointerType === "touch") return;
     const scroll = scrollRef.current;
     if (!scroll || scroll.scrollHeight <= scroll.clientHeight) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;

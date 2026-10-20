@@ -11,7 +11,8 @@ const statuses=["new","reviewing","assigned","completed","rejected"] as const;
 const accesses=["view","edit","manage"] as const;
 
 export async function POST(request:Request){
- const value=await request.json() as Record<string,unknown>;const firstName=String(value.firstName||"").trim(),lastName=String(value.lastName||"").trim(),address=String(value.address||"").trim();const area=Number(value.area),buildingAge=Number(value.buildingAge),expectedPrice=Number(value.expectedPrice),bedrooms=Number(value.bedrooms||0),floor=Number(value.floor||0),unitsPerFloor=Number(value.unitsPerFloor||1);
+ let value:Record<string,unknown>;try{value=await request.json();if(!value||typeof value!=="object"||Array.isArray(value))throw Error()}catch{return Response.json({ok:false,error:"INVALID_REQUEST"},{status:400})}const firstName=String(value.firstName||"").trim(),lastName=String(value.lastName||"").trim(),address=String(value.address||"").trim();const area=Number(value.area),buildingAge=Number(value.buildingAge),expectedPrice=Number(value.expectedPrice),bedrooms=Number(value.bedrooms||0),floor=Number(value.floor||0),unitsPerFloor=Number(value.unitsPerFloor||1);
+ if([area,buildingAge,expectedPrice,bedrooms,floor,unitsPerFloor].some(n=>!Number.isSafeInteger(n))||area>100000||expectedPrice>1e15||bedrooms<0||bedrooms>50||floor<0||floor>200||unitsPerFloor<1||unitsPerFloor>1000)return Response.json({ok:false,error:"INVALID_URGENT_SALE"},{status:400});
  if(firstName.length<2||lastName.length<2||address.length<8||area<20||buildingAge<1300||buildingAge>1405||expectedPrice<1_000_000)return Response.json({ok:false,error:"INVALID_URGENT_SALE"},{status:400});
  const account=await getRequestAccount(request),mobile=normalizeMobile(String(value.mobile||account?.mobile||""));
  if(!mobile)return Response.json({ok:false,error:"MOBILE_REQUIRED"},{status:400});

@@ -1,6 +1,7 @@
 import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const timestamps={createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull(),updatedAt:integer("updated_at",{mode:"timestamp_ms"}).notNull()};
+export const cooperateApplications=sqliteTable("cooperate_applications",{id:text("id").primaryKey(),payload:text("payload",{mode:"json"}).$type<Record<string,unknown>>().notNull(),createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull()});
 
 export const accounts=sqliteTable("accounts",{
  id:text("id").primaryKey(),role:text("role",{enum:["admin","user","consultant","agency"]}).notNull(),name:text("name").notNull(),mobile:text("mobile").notNull().unique(),passwordHash:text("password_hash"),address:text("address").notNull().default(""),status:text("status",{enum:["pending","active","suspended","rejected"]}).notNull().default("pending"),nationalId:text("national_id"),agencyId:text("agency_id"),...timestamps,
@@ -11,7 +12,7 @@ export const agencies=sqliteTable("agencies",{
 });
 
 export const properties=sqliteTable("properties",{
- id:text("id").primaryKey(),title:text("title").notNull(),ownerAccountId:text("owner_account_id"),consultantAccountId:text("consultant_account_id"),agencyId:text("agency_id"),ownerMobile:text("owner_mobile").notNull(),address:text("address").notNull(),district:text("district"),latitude:real("latitude"),longitude:real("longitude"),transactionType:text("transaction_type",{enum:["sale","rent","presale"]}).notNull(),propertyType:text("property_type").notNull(),area:integer("area").notNull(),bedrooms:integer("bedrooms").notNull().default(0),price:integer("price").notNull().default(0),description:text("description").notNull().default(""),coverImage:text("cover_image"),status:text("status",{enum:["draft","pending","published","rejected","archived"]}).notNull().default("pending"),featured:integer("featured",{mode:"boolean"}).notNull().default(false),...timestamps,
+ id:text("id").primaryKey(),title:text("title").notNull(),ownerAccountId:text("owner_account_id"),consultantAccountId:text("consultant_account_id"),agencyId:text("agency_id"),ownerMobile:text("owner_mobile").notNull(),address:text("address").notNull(),district:text("district"),latitude:real("latitude"),longitude:real("longitude"),transactionType:text("transaction_type",{enum:["sale","rent","presale"]}).notNull(),propertyType:text("property_type").notNull(),area:integer("area").notNull(),bedrooms:integer("bedrooms").notNull().default(0),price:integer("price").notNull().default(0),description:text("description").notNull().default(""),coverImage:text("cover_image"),status:text("status",{enum:["draft","pending","published","vip","rejected","archived"]}).notNull().default("pending"),featured:integer("featured",{mode:"boolean"}).notNull().default(false),...timestamps,
 },table=>[index("idx_properties_status_district").on(table.status,table.district),index("idx_properties_owner").on(table.ownerAccountId)]);
 
 export const propertyStatusHistory=sqliteTable("property_status_history",{
@@ -39,7 +40,7 @@ export const appMenuItems=sqliteTable("app_menu_items",{
  label:text("label").notNull(),
  subtitle:text("subtitle").notNull().default(""),
  icon:text("icon").notNull().default("home"),
- action:text("action",{enum:["home","urgent","featured","consultants","contact","login","register-property","url"]}).notNull(),
+ action:text("action",{enum:["home","urgent","featured","trust","cooperate","consultants","contact","login","register-property","url","vip"]}).notNull(),
  target:text("target").notNull().default(""),
  variant:text("variant",{enum:["item","cta"]}).notNull().default("item"),
  enabled:integer("enabled",{mode:"boolean"}).notNull().default(true),

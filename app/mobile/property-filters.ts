@@ -1,3 +1,4 @@
+import {neighborhoodSearchName} from './tehran-neighborhoods.ts';
 export function numericInput(value:string){return value.replace(/[۰-۹]/g,x=>String(x.charCodeAt(0)-1776)).replace(/[٠-٩]/g,x=>String(x.charCodeAt(0)-1632)).replace(/\D/g,"")}
 export type PropertyFilters={minPrice:string;maxPrice:string;minArea?:string;maxArea?:string;beds?:number;regions?:string[];neighborhoods?:string[];minBuildYear?:string;maxBuildYear?:string;amenities?:string[];latitude?:number;longitude?:number;radius?:number};
 const filterKeys=["minPrice","maxPrice","minArea","maxArea","beds","regions","neighborhoods","minBuildYear","maxBuildYear","amenities","latitude","longitude","radius"] as const;
@@ -22,7 +23,7 @@ export function matchesProperty(p:Filterable,f:PropertyFilters){
  if(f.minArea&&p.size<Number(f.minArea)||f.maxArea&&p.size>Number(f.maxArea))return false;
  if(f.beds&&p.beds<f.beds)return false;
  if(f.regions?.length&&!f.regions.includes(p.district||""))return false;
- if(f.neighborhoods?.length&&!f.neighborhoods.some(x=>p.area.includes(x)))return false;
+ if(f.neighborhoods?.length&&!f.neighborhoods.some(x=>neighborhoodSearchName(p.area).includes(neighborhoodSearchName(x))))return false;
  if(f.minBuildYear&&(!p.buildingYear||p.buildingYear<Number(f.minBuildYear)))return false;
  if(f.maxBuildYear&&(!p.buildingYear||p.buildingYear>Number(f.maxBuildYear)))return false;
  if(f.latitude!=null&&f.longitude!=null&&f.radius&&(

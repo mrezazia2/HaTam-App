@@ -3,6 +3,8 @@ import { getDb } from "../../../db";
 import { accounts, agencyMembers, consultations, properties } from "../../../db/schema";
 import { writeAudit } from "../_lib/audit";
 import { getRequestAccount } from "../_lib/authorization";
+import {hasVipAccess} from '../_lib/vip-access';
+import {validateValuation,valuationNotes,type ValuationInput} from '../../mobile/valuation-validation';
 import { cancelWorkflowReminders, createWorkflowConversation, notifyWorkflow, replaceWorkflowReminders } from "../_lib/workflow-communications";
 
 export const dynamic = "force-dynamic";
@@ -33,11 +35,20 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const account = await getRequestAccount(request);
-  if (!account || account.status !== "active" || !["user", "admin"].includes(account.role)) return Response.json({ ok: false, error: "AUTH_REQUIRED" }, { status: 401 });
-  const value = await request.json() as { propertyId?: string; subject?: string; notes?: string; scheduledAt?: string; customerAccountId?: string; consultantAccountId?: string };
+  if (!account || account.status !== "active") return Response.json({ ok: false, error: "AUTH_REQUIRED" }, { status: 401 });
+  if (!["user", "admin"].includes(account.role)) return Response.json({ok:false,error:"CUSTOMER_ROLE_REQUIRED",message:"این فرم مخصوص حساب مشتری است؛ درخواست مشتری را از پنل نقش خود ثبت کنید."},{status:403});
+  let value:{propertyId?:string;subject?:string;notes?:string;scheduledAt?:string;customerAccountId?:string;consultantAccountId?:string;kind?:string;valuation?:ValuationInput};
+  try{value=await request.json();if(!value||typeof value!=='object'||Array.isArray(value))throw Error()}catch{return Response.json({ok:false,error:'INVALID_REQUEST'},{status:400})}
+  if(value.kind==='valuation'){
+   const v=value.valuation;
+   if(!v||['name','mobile','address','area','year','price'].some(key=>typeof v[key as keyof ValuationInput]!=='string')||!Array.isArray(v.amenities))return Response.json({ok:false,error:'INVALID_VALUATION',message:'مشخصات قیمت‌گذاری کامل نیست.'},{status:400});
+   const errors=validateValuation(v);if(Object.keys(errors).length)return Response.json({ok:false,error:'INVALID_VALUATION',message:Object.values(errors)[0],fields:errors},{status:400});
+   value.subject='درخواست قیمت‌گذاری ملک';value.notes=valuationNotes(v);
+  }
   const db = getDb(), property = value.propertyId ? (await db.select().from(properties).where(eq(properties.id, value.propertyId)).limit(1))[0] : null;
-  if (value.propertyId && (!property || property.status !== "published")) return Response.json({ ok: false, error: "PROPERTY_NOT_AVAILABLE" }, { status: 404 });
+  if (value.propertyId && (!property || (property.status !== "published" && !(property.status==='vip'&&await hasVipAccess(account))))) return Response.json({ ok: false, error: "PROPERTY_NOT_AVAILABLE" }, { status: 404 });
   const customerAccountId = account.role === "user" ? account.id : String(value.customerAccountId || "");
+  if(account.role==="admin"&&!customerAccountId)return Response.json({ok:false,error:"CUSTOMER_REQUIRED",message:"برای ثبت به‌عنوان مدیر، مشتری را از بخش مدیریت درخواست‌ها انتخاب کنید."},{status:400});
   const customer = (await db.select().from(accounts).where(and(eq(accounts.id, customerAccountId), eq(accounts.role, "user"), eq(accounts.status, "active"))).limit(1))[0];
   if (!customer) return Response.json({ ok: false, error: "CUSTOMER_NOT_FOUND" }, { status: 400 });
   const subject = String(value.subject || "مشاوره خرید ملک").trim();

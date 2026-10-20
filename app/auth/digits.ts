@@ -3,6 +3,10 @@ export function asciiDigits(value: string) {
     .replace(/\D/g, "");
 }
 
+export function persianDigits(value:string|number){
+  return String(value).replace(/[0-9]/g,digit=>String.fromCharCode(1776+Number(digit)));
+}
+
 export function asciiNumerals(value: string) {
   return value
     .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 1776))

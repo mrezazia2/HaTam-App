@@ -6,6 +6,7 @@ import {normalizeMobile} from "../../../_lib/auth";
 import {authRateLimited,recordAuthEvent} from "../../../_lib/auth-security";
 import {writeAudit} from "../../../_lib/audit";
 import {createPasskeyChallenge,decodeBytes,issuePasskeySession,passkeyDestinations,passkeyRoles,passkeySite,trustedPasskeyMutation,type PasskeyRole} from "../../../_lib/passkey";
+import {loginDestination} from "../../../_lib/navigation";
 
 export const dynamic="force-dynamic";
 type AuthenticationResponse=Parameters<typeof verifyAuthenticationResponse>[0]["response"];
@@ -46,5 +47,5 @@ export async function POST(request:Request){
  await db.update(passkeyCredentials).set({counter:verified.authenticationInfo.newCounter,lastUsedAt:new Date()}).where(eq(passkeyCredentials.credentialId,credential.credentialId));
  const cookie=await issuePasskeySession(request,account.id);
  await writeAudit(db,account,"auth.passkey_signed_in","auth",account.id,"ورود با قفل دستگاه انجام شد.",{role:account.role});
- return Response.json({ok:true,destination:passkeyDestinations[account.role as PasskeyRole]},{headers:{"set-cookie":cookie}});
+ return Response.json({ok:true,destination:await loginDestination(request,account.role as PasskeyRole)},{headers:{"set-cookie":cookie}});
 }

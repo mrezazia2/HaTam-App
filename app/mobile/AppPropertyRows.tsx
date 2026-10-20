@@ -1,0 +1,9 @@
+"use client";
+import {navigateApp} from './app-navigation';
+import {propertyBuildingYear} from './property-filters';
+import AmenityIcon from '../property/AmenityIcon';
+export type AppPropertyRow={id:string;title:string;address:string;area:number;bedrooms:number;price:number;description:string;coverImage:string|null;district?:string|null;transactionType:string;createdAt?:string;featured?:boolean};
+export function propertySummary(item:AppPropertyRow){let data:Record<string,unknown>={};try{data=JSON.parse(item.description)||{}}catch{}return {data,year:propertyBuildingYear(data),amenities:Array.isArray(data.amenities)?data.amenities.map(String):[]}}
+export default function AppPropertyRows({items}:{items:AppPropertyRow[]}){
+ return <div className="app-designed-property-list">{items.map(item=>{const {amenities}=propertySummary(item);return <article key={item.id} className="app-designed-property-row"><button type="button" className="property-row-hit" aria-label={'مشاهده '+item.title} onClick={()=>navigateApp(`/app?screen=detail&propertyId=${encodeURIComponent(item.id)}`)}/><div className="property-row-price"><strong>{Number(item.price).toLocaleString('fa-IR')}</strong><span>تومان</span><small>{item.createdAt?new Date(item.createdAt).toLocaleDateString('fa-IR'):'آگهی ملک'}</small></div><div className="property-row-copy"><h2>{item.title}</h2><p>{item.address}</p><small>{item.area.toLocaleString('fa-IR')} متر · {item.bedrooms.toLocaleString('fa-IR')} خواب</small><div className="property-row-amenities">{amenities.slice(0,4).map(a=><span key={a} title={a}><AmenityIcon name={a}/><span className="sr-only">{a}</span></span>)}</div></div><div className="property-row-image">{item.coverImage?<img src={item.coverImage} alt="" loading="lazy"/>:<span>بدون تصویر</span>}</div></article>})}</div>
+}

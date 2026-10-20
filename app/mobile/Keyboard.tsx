@@ -57,6 +57,9 @@ export function KeyboardProvider({ children }: PropsWithChildren) {
       setDragOffset,
       setDragging,
       show: (element) => {
+        // Real phones already provide their own keyboard. This dock is a
+        // desktop preview asset, not a second keyboard for touch devices.
+        if (window.matchMedia('(pointer:coarse)').matches || navigator.maxTouchPoints > 0) return;
         setRawDragOffset(0);
         setDragging(false);
         setFocusedElement(element ?? null);
@@ -212,6 +215,7 @@ export function KeyboardDock() {
   const keyboard = useKeyboard();
   const { device } = useMobileDevice();
   const dismissDrag = useKeyboardDismissDrag();
+  if (typeof window !== 'undefined' && (window.matchMedia('(pointer:coarse)').matches || navigator.maxTouchPoints > 0)) return null;
   const keyboardTransition = keyboard.isDragging
     ? { duration: 0 }
     : { duration: 0.26, ease: [0.2, 0.8, 0.2, 1] as [number, number, number, number] };

@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {validateVipRequest,activeVipSubscription} from '../app/vip/validation.ts';
+test('VIP requires a current active subscription period',()=>{const now=new Date('2026-10-18');const row={status:'active',startsAt:new Date('2026-10-01'),expiresAt:new Date('2026-11-01')};assert.equal(activeVipSubscription(row,now),true);for(const patch of [{status:'pending'},{status:'cancelled'},{expiresAt:new Date('2026-10-18')},{startsAt:new Date('2026-10-19')},{expiresAt:null}])assert.equal(activeVipSubscription({...row,...patch},now),false)});
+test('VIP form validates names, price ranges and Persian digits',()=>{const valid={firstName:'رضا',lastName:'آزمایشی',minPrice:'۵٬۰۰۰٬۰۰۰٬۰۰۰',maxPrice:'۶٬۰۰۰٬۰۰۰٬۰۰۰',minBuildYear:'۱۳۸۵',maxBuildYear:'۱۴۰۵'};assert.equal(validateVipRequest(valid).ok,true);assert.equal(validateVipRequest(valid).minBudget,5000000000);for(const patch of [{firstName:''},{minPrice:'7000000000'},{minPrice:'',maxPrice:''},{maxBuildYear:'۱۳۸۰'}])assert.equal(validateVipRequest({...valid,...patch}).ok,false)});

@@ -1,0 +1,7 @@
+"use client";
+import {matchesProperty,propertyBuildingYear,type PropertyFilters} from '../mobile/property-filters';
+export type VipProperty={id:string;title:string;address:string;district:string|null;price:number;area:number;bedrooms:number;coverImage:string|null;description:string};
+export default function VipInventory({items,filters}:{items:VipProperty[];filters?:PropertyFilters}){
+ const rows=items.filter(item=>{let details:Record<string,unknown>={};try{details=JSON.parse(item.description)}catch{}return !filters||matchesProperty({amount:item.price,size:item.area,beds:item.bedrooms,area:item.address,district:item.district||undefined,buildingYear:propertyBuildingYear(details),amenities:Array.isArray(details.amenities)?details.amenities:[]},filters)});
+ return <section className="vip-card vip-inventory"><h2>{filters?'فایل‌های اختصاصی مطابق درخواست':'فایل‌های اختصاصی کلاب VIP'}</h2><p>این فایل‌ها هنوز در آرشیو عمومی منتشر نشده‌اند.</p>{rows.map(item=><a key={item.id} href={`/app?screen=detail&propertyId=${encodeURIComponent(item.id)}`}>{item.coverImage&&<img src={item.coverImage} alt=""/>}<div><strong>{item.title}</strong><span>{item.address}</span><small>{item.area.toLocaleString('fa-IR')} متر · {item.bedrooms.toLocaleString('fa-IR')} خواب</small><b>{item.price.toLocaleString('fa-IR')} تومان</b></div></a>)}{!rows.length&&<p role="status">فعلاً فایل اختصاصی مطابق این مشخصات وجود ندارد؛ درخواست شما قابل پیگیری است.</p>}</section>
+}

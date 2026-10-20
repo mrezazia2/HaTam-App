@@ -4,7 +4,8 @@ test('Persian and Arabic numeric input preserves digits when editing prices',()=
 test('property filters use price, area, bedrooms, location, year and amenities',()=>{
  const p={amount:500,size:80,beds:2,district:'13',area:'نیروی هوایی',buildingYear:1400,amenities:['پارکینگ']};
  assert.equal(matchesProperty(p,{minPrice:'400',maxPrice:'600',regions:['13','14'],minBuildYear:'1399',maxBuildYear:'1401'}),true);
- for(const f of [{minPrice:'501'},{maxPrice:'499'},{minArea:'81'},{beds:3},{regions:['14']},{neighborhoods:['پیروزی']},{minBuildYear:'1401'},{amenities:['آسانسور']}])assert.equal(matchesProperty(p,{minPrice:'',maxPrice:'',...f}),false);
+ for(const f of [{minPrice:'501'},{maxPrice:'499'},{minArea:'81'},{beds:3},{regions:['14']},{neighborhoods:['پرستار']},{minBuildYear:'1401'},{amenities:['آسانسور']}])assert.equal(matchesProperty(p,{minPrice:'',maxPrice:'',...f}),false);
+ assert.equal(matchesProperty(p,{minPrice:'',maxPrice:'',neighborhoods:['نیروی هوایی (پیروزی)']}),true);
 });
 test('mobile filter parameters round-trip to the property API',()=>{
  const selected={minPrice:'5000000000',maxPrice:'20000000000',regions:['13','14'],neighborhoods:['پیروزی','نبرد'],amenities:['پارکینگ'],beds:2,latitude:35.7,longitude:51.4,radius:800};

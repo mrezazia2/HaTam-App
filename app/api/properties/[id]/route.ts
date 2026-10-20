@@ -5,6 +5,7 @@ import { canManageProperty } from "../../_lib/property-access";
 import { publicProperty } from "../../_lib/public-property";
 import { getRequestAccount } from "../../_lib/authorization";
 import { writeAudit } from "../../_lib/audit";
+import {hasVipAccess} from '../../_lib/vip-access';
 
 export const dynamic = "force-dynamic";
 const transactionTypes = ["sale", "rent", "presale"] as const;
@@ -22,7 +23,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!row) return Response.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
   const account = await getRequestAccount(request);
   const manages = canManageProperty(account, row);
-  if (row.status !== "published" && !manages) return Response.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
+  if (row.status !== "published" && !manages && !(row.status==='vip'&&await hasVipAccess(account))) return Response.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
   const rows = await db.select().from(propertyMedia).where(and(eq(propertyMedia.propertyId, id), eq(propertyMedia.status, "active")));
   const advisor = row.consultantAccountId
     ? (await db.select({ id: accounts.id, name: accounts.name, mobile: accounts.mobile, status: accounts.status }).from(accounts).where(eq(accounts.id, row.consultantAccountId)).limit(1))[0]
@@ -35,7 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     size: item.size,
   }));
   const publicAdvisor = advisor?.status === "active" ? { id: advisor.id, name: advisor.name || "مشاور حاتم", mobile: advisor.mobile } : null;
-  if (!manages) return Response.json({ ok: true, item: publicProperty(row), media, advisor: publicAdvisor });
+  if (!manages) return Response.json({ ok: true, item: publicProperty(row), media, advisor: publicAdvisor },{headers:{'cache-control':'private, no-store'}});
   return Response.json({
     ok: true,
     item: row,
@@ -55,7 +56,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const value = await request.json() as Record<string, unknown>;
   const requested = String(value.status ?? row.status);
-  const allowedStatuses = account.role === "admin" ? ["draft", "pending", "published", "rejected", "archived"] : ["draft", "pending", "archived"];
+  const allowedStatuses = account.role === "admin" ? ["draft", "pending", "published", "vip", "rejected", "archived"] : ["draft", "pending", "archived"];
   if (!allowedStatuses.includes(requested)) return Response.json({ ok: false, error: "INVALID_STATUS" }, { status: 400 });
   const title = value.title === undefined ? row.title : String(value.title).trim();
   const address = value.address === undefined ? row.address : String(value.address).trim();

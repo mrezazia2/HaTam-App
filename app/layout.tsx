@@ -36,6 +36,7 @@ import "./theme/ui-overrides.css";
 import "./brand/scoped-appearance.css";
 import "./auth/surface-contrast.css";
 import "./auth/passkey-ui.css";
+import "./admin/light-controls.css";
 import "./pwa/pwa.css";
 import PwaInstallPrompt from "./pwa/PwaInstallPrompt";
 
@@ -50,6 +51,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
+    apple: [{url:"/icons/hatam-install-v2-180.png",sizes:"180x180",type:"image/png"}],
   },
   openGraph: {
     title: "املاک حاتم",

@@ -34,6 +34,11 @@ body,
 
 .mobile-carousel::-webkit-scrollbar { display: none; }
 .mobile-carousel { overflow-x: auto; overflow-y: hidden; touch-action: pan-y; }
+@media (pointer:coarse) {
+  .hatam-app .mobile-scroll { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+  .hatam-app .neighborhood-list { touch-action: pan-y; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+  html body :is(input,select,textarea,[contenteditable="true"]) { font-size: max(16px,1rem) !important; }
+}
 .mobile-carousel[data-dragging="true"] { cursor: none; }
 .mobile-carousel-content { display: flex; width: max-content; min-width: 100%; transform: translateX(var(--mobile-carousel-overdrag)); will-change: transform; }
 .mobile-carousel-scrollbar { position: absolute; z-index: 4; inset: 0; opacity: 0; pointer-events: none; transition: opacity 150ms ease; }

@@ -3,6 +3,7 @@ import { getDb } from "../../../db";
 import { accounts, agencyMembers, properties, visits } from "../../../db/schema";
 import { writeAudit } from "../_lib/audit";
 import { getRequestAccount } from "../_lib/authorization";
+import {hasVipAccess} from '../_lib/vip-access';
 import { cancelWorkflowReminders, createWorkflowConversation, notifyWorkflow, replaceWorkflowReminders } from "../_lib/workflow-communications";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
   if (!account || account.status !== "active" || !["user", "admin"].includes(account.role)) return Response.json({ ok: false, error: "AUTH_REQUIRED" }, { status: 401 });
   const value = await request.json() as { propertyId?: string; scheduledAt?: string; customerAccountId?: string; consultantAccountId?: string };
   const db = getDb(), property = (await db.select().from(properties).where(eq(properties.id, value.propertyId || "")).limit(1))[0];
-  if (!property || property.status !== "published") return Response.json({ ok: false, error: "PROPERTY_NOT_AVAILABLE" }, { status: 404 });
+  if (!property || (property.status !== "published" && !(property.status==='vip'&&await hasVipAccess(account)))) return Response.json({ ok: false, error: "PROPERTY_NOT_AVAILABLE" }, { status: 404 });
   const customerAccountId = account.role === "user" ? account.id : String(value.customerAccountId || "");
   const customer = (await db.select().from(accounts).where(and(eq(accounts.id, customerAccountId), eq(accounts.role, "user"), eq(accounts.status, "active"))).limit(1))[0];
   if (!customer) return Response.json({ ok: false, error: "CUSTOMER_NOT_FOUND" }, { status: 400 });

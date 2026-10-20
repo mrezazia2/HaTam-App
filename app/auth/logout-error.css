@@ -1,0 +1,1 @@
+.logout-error{position:fixed;z-index:30000;bottom:80px;inset-inline:16px;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;margin:0 auto;padding:14px 18px;border:1px solid var(--theme-border,#b76e54);border-radius:12px;color:var(--theme-text,#17372c);background:var(--theme-surface,#fff);font-size:15px;line-height:1.8;box-shadow:0 4px 20px #0003}

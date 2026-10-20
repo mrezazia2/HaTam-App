@@ -1,11 +1,11 @@
-export type AppMenuAction="home"|"urgent"|"featured"|"trust"|"cooperate"|"consultants"|"contact"|"login"|"register-property"|"url";
+export type AppMenuAction="home"|"urgent"|"featured"|"trust"|"cooperate"|"consultants"|"contact"|"login"|"register-property"|"url"|"vip";
 export type AppMenuItem={id:string;label:string;subtitle:string;icon:string;action:AppMenuAction;target:string;variant:"item"|"cta";enabled:boolean;sortOrder:number};
 
 export const defaultAppMenuItems:AppMenuItem[]=[
  {id:"home",label:"صفحه اصلی",subtitle:"",icon:"home",action:"home",target:"",variant:"item",enabled:true,sortOrder:10},
  {id:"trust",label:"اعتماد شما",subtitle:"",icon:"heart",action:"trust",target:"",variant:"item",enabled:true,sortOrder:15},
  {id:"urgent",label:"فروش سریع",subtitle:"",icon:"rocket",action:"urgent",target:"",variant:"item",enabled:true,sortOrder:20},
- {id:"vip",label:"مشتریان VIP",subtitle:"",icon:"person",action:"featured",target:"",variant:"item",enabled:true,sortOrder:30},
+ {id:"vip",label:"مشتریان VIP",subtitle:"",icon:"person",action:"vip",target:"",variant:"item",enabled:true,sortOrder:30},
  {id:"featured",label:"املاک ویژه",subtitle:"",icon:"bookmark",action:"featured",target:"",variant:"item",enabled:true,sortOrder:40},
  {id:"cooperate",label:"همکاری با ما",subtitle:"",icon:"consultant",action:"cooperate",target:"",variant:"item",enabled:true,sortOrder:50},
  {id:"contact",label:"آدرس و ارتباط",subtitle:"",icon:"contact",action:"contact",target:"/contact",variant:"item",enabled:true,sortOrder:60},

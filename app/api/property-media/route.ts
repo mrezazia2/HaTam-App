@@ -5,6 +5,7 @@ import { properties, propertyMedia, propertyStatusHistory, urgentSaleRequests } 
 import { writeAudit } from "../_lib/audit";
 import { getRequestAccount } from "../_lib/authorization";
 import { canManageProperty } from "../_lib/property-access";
+import {hasVipAccess} from '../_lib/vip-access';
 import { getUploadSettings, uploadCategory, validateUpload } from "../_lib/upload-settings";
 
 const local = (url: URL) => url.hostname === "localhost" || url.hostname === "127.0.0.1";
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
   const isPublic = property?.status === "published";
   if (!isPublic) {
     const account = await accountForMediaRequest(request);
-    if (!account || (account.role !== "admin" && account.id !== record.ownerAccountId && (!property || !canManageProperty(account, property)) && urgentSale?.assignedConsultantId !== account.id)) {
+    if (!account || (account.role !== "admin" && account.id !== record.ownerAccountId && (!property || !canManageProperty(account, property)) && urgentSale?.assignedConsultantId !== account.id && !(property?.status==='vip'&&await hasVipAccess(account)))) {
       return new Response("Forbidden", { status: 403 });
     }
   }

@@ -1,0 +1,9 @@
+/* Scope overrides to admin surfaces; never recolor other platforms. */
+html[data-theme="light"] :is(.admin-workspace,.admin-page,.ops-page,.integration-page,.create-center,.trust-admin-page,.menu-admin-page,.communications-admin){color:var(--theme-text);background:var(--theme-page);color-scheme:light}
+html[data-theme="light"] :is(.admin-workspace,.admin-page,.ops-page,.integration-page,.create-center,.trust-admin-page,.menu-admin-page,.communications-admin) :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=hidden]),select,textarea){background:#fff!important;color:var(--theme-text,#17372c)!important;-webkit-text-fill-color:var(--theme-text,#17372c)!important;border-color:var(--theme-border,#d2ddd6)!important;color-scheme:light}
+html[data-theme="light"] :is(.admin-workspace,.admin-page,.ops-page,.integration-page,.create-center,.trust-admin-page,.menu-admin-page,.communications-admin) :is(input,textarea)::placeholder{color:var(--theme-muted,#60766b)!important;-webkit-text-fill-color:var(--theme-muted,#60766b)!important;opacity:1}
+html[data-theme="light"] :is(.urgent-admin-list>article,.entity-modal>form,.filter-admin-card,.filter-admin-actions,.trust-upload,.trust-admin-list article,.settings-card,.page-builder,.builder-settings){background:var(--theme-surface,#fff);color:var(--theme-text,#17372c);border-color:var(--theme-border)}
+html[data-theme="light"] :is(.urgent-admin,.entity-modal,.filter-config-admin,.trust-admin-page,.settings-card) :is(label,small,p){color:var(--theme-muted,#60766b)}
+html[data-theme="light"] .urgent-admin :is(header, .urgent-assignment){border-color:var(--theme-border)}
+html[data-theme="light"] .urgent-admin header b{background:var(--theme-surface-2);color:var(--theme-text)}
+html[data-theme="light"] :is(.admin-workspace,.admin-page,.trust-admin-page) :is(input,select,textarea):focus-visible{outline:2px solid var(--brand-accent,#ad8540);outline-offset:2px}
