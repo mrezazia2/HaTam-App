@@ -1,6 +1,7 @@
 "use client";
 
 import {propertyBuildingYear} from "./mobile/property-filters";
+import HomeAdvancedFilters from "./site/HomeAdvancedFilters";
 import ManagedSiteContent from "./site/ManagedSiteContent";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -232,14 +233,14 @@ function HomePage() {
           <label><span className="sr-only">نوع ملک</span><select aria-label="نوع ملک" value={filters.kind} onChange={(e) => setFilter("kind", e.target.value)}><option value="">همه ملک‌ها</option><option>آپارتمان</option><option>پنت‌هاوس</option></select><ChevronDownIcon /></label>
           <button className="more-filter" aria-expanded={moreFiltersOpen} onClick={() => setMoreFiltersOpen((open) => !open)}>فیلتر بیشتر <PlusIcon /></button>
         </div>
-        {moreFiltersOpen && <div className="advanced-filter" role="group" aria-label="فیلترهای بیشتر"><label>قیمت از<input inputMode="numeric" value={filters.minPrice ? Number(filters.minPrice).toLocaleString("fa-IR") : ""} onChange={(e) => setFilter("minPrice", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="تومان" /></label><label>قیمت تا<input inputMode="numeric" value={filters.maxPrice ? Number(filters.maxPrice).toLocaleString("fa-IR") : ""} onChange={(e) => setFilter("maxPrice", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="تومان" /></label><label>متراژ از<input inputMode="numeric" value={filters.minSize} onChange={(e) => setFilter("minSize", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="متر" /></label><label>متراژ تا<input inputMode="numeric" value={filters.maxSize} onChange={(e) => setFilter("maxSize", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="متر" /></label>{[["beds","حداقل تعداد خواب"],["minYear","سال ساخت از"],["maxYear","سال ساخت تا"],["floors","کل طبقات ساختمان"],["units","واحد در طبقه"]].map(([key,label])=><label key={key}>{label}<span className={["beds","floors","units"].includes(key)?"site-number-stepper":"site-year-input"}>{["beds","floors","units"].includes(key)&&<button type="button" aria-label={`کاهش ${label}`} onClick={()=>setFilter(key,String(Math.max(0,Number(filters[key]||0)-1)))}>−</button>}<input inputMode="numeric" value={filters[key]||""} placeholder={key.includes("Year")?"13..":""} aria-label={label} onChange={e=>setFilter(key,latinDigits(e.target.value).replace(/\D/g,"").slice(0,4))}/>{["beds","floors","units"].includes(key)&&<button type="button" aria-label={`افزایش ${label}`} onClick={()=>setFilter(key,String(Math.min(9999,Number(filters[key]||0)+1)))}>+</button>}</span></label>)}<div className="site-amenity-switches" role="group" aria-label="امکانات ملک">{["آسانسور","بالکن","حیاط","پارکینگ","انباری","پارک موتور"].map(item=><button type="button" key={item} role="switch" aria-checked={filters.amenities?.includes(item)||false} onClick={()=>setFilter("amenities",filters.amenities?.includes(item)?filters.amenities.filter(x=>x!==item):[...(filters.amenities||[]),item])}><i aria-hidden="true"/>{item}<span className="sr-only">{filters.amenities?.includes(item)?"روشن":"خاموش"}</span></button>)}</div><button onClick={resetFilters}>پاک کردن فیلترها</button></div>}
+        {moreFiltersOpen && <HomeAdvancedFilters filters={filters} setFilter={setFilter} resetFilters={resetFilters} onShowResults={()=>{setMoreFiltersOpen(false);document.getElementById("home-property-results")?.scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})}}/>}
         <div className="quick-action-grid">
           {quickActions.map(({ Icon, title, text }) => <button key={title} onClick={() => runQuickAction(title)}><Icon /><span><strong>{title}</strong><small>{text}</small></span></button>)}
         </div>
       </div>
     </section>
 
-    <section className="featured page-section">
+    <section id="home-property-results" className="featured page-section">
       <div className="section-title"><div><span>انتخاب‌های مطمئن حاتم</span><h2>فایل‌های ویژه</h2></div><button onClick={() => go("/properties/featured")}>مشاهده همه <ChevronLeftIcon /></button></div>
       <div className="listing-grid">
         {(hasFilters ? filtered : properties.filter(property => property.featured)).map((property) => <PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={() => toggleFavorite(property.id)} />)}

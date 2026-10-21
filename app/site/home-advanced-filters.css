@@ -1,0 +1,29 @@
+.experience-root .home-advanced-filter{--hf-bg:#fff;--hf-text:#164950;--hf-muted:#65827e;--hf-border:#ceddd7;--hf-step:#e6eeea;--hf-gold:#b98a29;--hf-input:#fff;width:min(1008px,100%);box-sizing:border-box;display:block;margin:12px auto 0;padding:24px 16px 12px;border:1px solid var(--hf-border);border-radius:18px;background:var(--hf-bg);color:var(--hf-text);backdrop-filter:none}
+html[data-theme=dark] .experience-root .home-advanced-filter{--hf-bg:#092a22;--hf-text:#edf4ee;--hf-muted:#b3c8be;--hf-border:#36574b;--hf-step:#1b4033;--hf-gold:#c6993e;--hf-input:#0c3026}
+.home-advanced-filter .home-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px}
+.home-advanced-filter .home-filter-field,.home-advanced-filter .home-filter-amenities{min-width:0;padding:0;margin:0;border:0;text-align:right}
+.home-advanced-filter .home-filter-field legend{float:none;width:100%;margin-bottom:8px;padding:0;color:var(--hf-muted);font-size:14px;line-height:1.8}
+.home-advanced-filter .home-filter-range{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px}
+.home-advanced-filter .home-filter-range>span{color:var(--hf-muted);font-size:13px}
+.experience-root .home-advanced-filter input{width:100%;min-width:0;height:50px;box-sizing:border-box;padding:0 12px;border:1px solid var(--hf-border)!important;border-radius:13px;color:var(--hf-text)!important;-webkit-text-fill-color:var(--hf-text)!important;background:var(--hf-input)!important;font:inherit;font-size:16px;text-align:center;outline:none}
+.experience-root .home-advanced-filter input::placeholder{color:var(--hf-muted)!important;-webkit-text-fill-color:var(--hf-muted)!important;opacity:1}
+.home-advanced-filter .home-filter-stepper{display:flex;height:50px;overflow:hidden;border:1px solid var(--hf-border);border-radius:13px;background:var(--hf-input)}
+.experience-root .home-filter-stepper input{flex:1;border:0!important;height:48px;border-radius:0;padding:0 4px;font-weight:600}
+.experience-root .home-advanced-filter .home-filter-stepper button{align-self:stretch;grid-column:auto;width:50px;min-height:48px;height:auto;flex:0 0 50px;border:0;border-radius:0;background:var(--hf-step);color:var(--hf-text);padding:0;font:inherit;font-size:23px}
+.home-advanced-filter .home-filter-amenities{margin-top:17px;padding-top:16px;border-top:1px dashed var(--hf-border)}
+.home-advanced-filter .home-filter-amenities legend{float:right;display:block;width:100%;padding:0;margin-bottom:20px;color:var(--hf-gold);font-size:15px;font-weight:700}
+.home-filter-amenities>div{clear:both;display:flex;gap:10px;flex-wrap:wrap}
+.experience-root .home-filter-amenities button{grid-column:auto;align-self:auto;min-height:44px;height:auto;padding:8px 19px;border:1px solid var(--hf-border);border-radius:30px;background:var(--hf-input);color:var(--hf-text);font:inherit;font-size:15px;white-space:nowrap}
+.experience-root .home-filter-amenities button[aria-checked=true]{background:var(--hf-gold);border-color:var(--hf-gold);color:#fff;-webkit-text-fill-color:#fff;font-weight:700}
+.home-advanced-filter .home-filter-actions{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:20px -16px 0;padding:17px 16px 0;border-top:1px solid var(--hf-border);background:none}
+.experience-root .home-filter-actions button{grid-column:auto;align-self:auto;min-height:50px;height:auto;font:inherit;font-size:16px}
+.experience-root .home-filter-actions .home-filter-clear{padding:8px 0;border:0;border-radius:0;color:var(--hf-muted);background:none;text-decoration:underline;text-underline-offset:3px}
+.experience-root .home-filter-actions .home-filter-submit{padding:10px 30px;border:0;border-radius:15px;background:var(--hf-gold);color:#fff;-webkit-text-fill-color:#fff;font-weight:700}
+.home-advanced-filter :is(button,input):focus-visible{outline:3px solid var(--hf-gold);outline-offset:2px}
+@media(max-width:600px){.experience-root .home-advanced-filter{padding:18px 12px 12px}.home-advanced-filter .home-filter-grid{grid-template-columns:minmax(0,1fr);gap:16px}.home-advanced-filter .home-filter-actions{margin-inline:-12px;padding-inline:12px}.experience-root .home-filter-amenities button{padding:8px 15px}.home-filter-amenities>div{gap:8px}}
+/* Keep the form independent of legacy hero-button and light-theme overrides. */
+html[data-theme] .experience-root .advanced-filter.home-advanced-filter{background:var(--hf-bg)!important;border-color:var(--hf-border)!important;color:var(--hf-text)!important}
+html[data-theme] .experience-root .home-advanced-filter .home-filter-stepper button{background:var(--hf-step)!important;color:var(--hf-text)!important;-webkit-text-fill-color:var(--hf-text)!important}
+html[data-theme] .experience-root .home-advanced-filter .home-filter-amenities button{background:var(--hf-input)!important;color:var(--hf-text)!important;-webkit-text-fill-color:var(--hf-text)!important;border-color:var(--hf-border)!important}
+html[data-theme] .experience-root .home-advanced-filter .home-filter-amenities button[aria-checked=true],html[data-theme] .experience-root .home-advanced-filter .home-filter-submit{background:var(--hf-gold)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:var(--hf-gold)!important}
+html[data-theme] .experience-root .home-advanced-filter .home-filter-clear{background:transparent!important;color:var(--hf-muted)!important;-webkit-text-fill-color:var(--hf-muted)!important}
