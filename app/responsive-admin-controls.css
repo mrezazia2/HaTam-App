@@ -37,7 +37,7 @@
  .admin-heading{flex-wrap:wrap;gap:12px}.admin-heading-actions{flex-wrap:wrap;margin-inline-start:auto}
 }
 @media(max-width:720px){
- .communications-in-header .communications-panel{top:72px!important;left:12px!important;right:12px!important;width:calc(100vw - 24px)!important;height:min(680px,calc(100dvh - 90px))!important}
+ .admin-shell .communications-dock.communications-in-header .communications-panel{top:84px!important;left:12px!important;right:12px!important;width:calc(100vw - 24px)!important;height:min(680px,calc(100dvh - 102px))!important}
  .communications-panel .chat-shell{display:block}.chat-shell>aside{height:100%}.chat-shell>main{display:none;height:100%}.chat-shell.has-selection>aside{display:none}.chat-shell.has-selection>main{display:flex}
  .chat-back{display:block;min-height:44px;border:0;border-radius:8px;background:var(--theme-surface,#173e2f);color:var(--theme-text,#fff)}
  .trust-admin-list article{grid-template-columns:88px minmax(0,1fr) 44px}.trust-admin-list .trust-visibility-toggle{grid-column:1/3;grid-row:2}.trust-admin-list .danger{grid-column:3;grid-row:2}
