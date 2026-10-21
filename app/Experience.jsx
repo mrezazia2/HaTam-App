@@ -1,5 +1,6 @@
 "use client";
 
+import ManagedSiteContent from "./site/ManagedSiteContent";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityLogIcon,
@@ -248,6 +249,8 @@ function HomePage() {
       {hasFilters && filtered.length === 0 && <div className="no-result"><MagnifyingGlassIcon /><h3>فایلی با این فیلترها پیدا نشد</h3><button onClick={resetFilters}>نمایش همه فایل‌ها</button></div>}
     </section>
 
+    <section className="featured ordinary-properties page-section"><div className="section-title"><div><span>فایل‌های تازه حاتم</span><h2>آرشیو املاک</h2></div><button onClick={()=>go("/properties")}>مشاهده همه <ChevronLeftIcon/></button></div><div className="listing-grid">{(hasFilters?filtered:properties).filter(property=>!property.featured).map(property=><PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={()=>toggleFavorite(property.id)}/>)}</div>{!loading&&!properties.some(property=>!property.featured)&&<p>هنوز ملک معمولی منتشر نشده است.</p>}</section>
+    <ManagedSiteContent slug="home"/>
     <section className="trust-strip page-section"><div><strong>+۲۴۰</strong><span>فایل تاییدشده</span></div><div><strong>۹۸٪</strong><span>رضایت مشتریان</span></div><div><strong>۱۵ سال</strong><span>تجربه بازار تهران</span></div><button onClick={() => go("/panel")}><RocketIcon /> ورود به پنل کاربری</button></section>
     {toast && <div className="toast" role="status">{toast}</div>}
     <DetailModal property={selected} onClose={() => setSelected(null)} />

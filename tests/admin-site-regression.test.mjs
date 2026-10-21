@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
+test('admin background refresh preserves page drafts and status uses a separate operation',async()=>{const s=await readFile('app/admin/AdminWorkspace.tsx','utf8');assert.match(s,/if\(!silent\)\{setPages/);assert.match(s,/kind==="properties"\?"status":"save"/)});
+test('ordinary published homes reuse featured cards below featured section',async()=>{const s=await readFile('app/Experience.jsx','utf8');assert.ok(s.indexOf('ordinary-properties')>s.indexOf('featured page-section'));assert.match(s,/filter\(property=>!property.featured\)/)});
+test('archive sort is full width, single row with centered icons',async()=>{const s=await readFile('app/site/property-sort.css','utf8');assert.match(s,/max-width:none;grid-template-columns:repeat\(4/);assert.match(s,/place-items:center/)});

@@ -1,0 +1,2 @@
+export const managedSitePages=[['home','صفحه اصلی'],['properties','آرشیو املاک'],['featured','فایل‌های ویژه'],['consultants','مشاوران'],['ai-search','جست‌وجوی هوشمند'],['trust','اعتماد شما'],['contact','ارتباط با ما'],['valuation','قیمت‌گذاری ملک'],['subscriptions','اشتراک‌ها'],['requests','درخواست‌های من'],['blog','بلاگ'],['favorites','علاقه‌مندی‌ها'],['notifications','اعلان‌ها'],['visit','درخواست بازدید']] as const;
+export const managedPageSlug=(path:string)=>path==='/'?'home':path==='/properties/featured'?'featured':path==='/visits/new'?'visit':path.split('/')[1];

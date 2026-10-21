@@ -40,6 +40,16 @@ test('VPS production HTTP: public routes, authenticated panels and blocked previ
  const {server,port}=await startProdServer({host:'127.0.0.1',port:0,outDir:resolve('dist')});
  const request=(path,options={})=>fetch(`http://127.0.0.1:${port}${path}`,{...options,redirect:'manual'});
  try{
+ const workspaceMutation=(resource,action,payload,cookie=cookies.admin)=>request('/api/admin/workspace',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify({resource,action,payload})});
+ const forbiddenStatus=await workspaceMutation('properties','status',{id:'private',status:'فعال'},cookies.user);assert.equal(forbiddenStatus.status,403);await forbiddenStatus.arrayBuffer();
+ const approve=await workspaceMutation('properties','status',{id:'private',status:'فعال'});assert.equal(approve.status,200,await approve.clone().text());await approve.arrayBuffer();assert.equal((await db.prepare("SELECT status FROM properties WHERE id='private'").first()).status,'published');
+ const reject=await workspaceMutation('properties','status',{id:'private',status:'در انتظار'});assert.equal(reject.status,200);await reject.arrayBuffer();
+ const managedPage={id:'SITE-properties',title:'Managed archive title',slug:'properties',target:'site',status:'منتشرشده',blocks:[{id:'QA-CONTENT',type:'text',title:'Archive introduction',body:'Managed introduction from admin'}]};
+ const saveManaged=await workspaceMutation('pages','save',managedPage);assert.equal(saveManaged.status,200,await saveManaged.clone().text());await saveManaged.arrayBuffer();
+ const publicManaged=await request('/api/content/properties');assert.equal(publicManaged.status,200);const managedBody=await publicManaged.json();assert.equal(managedBody.page.title,managedPage.title);assert.equal(managedBody.page.blocks[0].body,managedPage.blocks[0].body);
+ const duplicatePage=await workspaceMutation('pages','save',{...managedPage,id:'duplicate'});assert.equal(duplicatePage.status,409);await duplicatePage.arrayBuffer();
+ const badPage=await workspaceMutation('pages','save',{...managedPage,slug:'../private'});assert.equal(badPage.status,400);await badPage.arrayBuffer();
+ const deleteManaged=await workspaceMutation('pages','delete',{id:managedPage.id});assert.equal(deleteManaged.status,200);await deleteManaged.arrayBuffer();const deletedManaged=await request('/api/content/properties');assert.equal(deletedManaged.status,404);await deletedManaged.arrayBuffer();
  const publicConsultant=await request('/api/consultants?id=consultant');assert.equal(publicConsultant.status,200);const publicConsultantBody=await publicConsultant.json();assert.equal(publicConsultantBody.item.mobile,'09120000002');assert.equal(publicConsultantBody.item.id,'consultant');assert.equal(publicConsultantBody.item.passwordHash,undefined);
  const nonConsultant=await request('/api/consultants?id=user');assert.equal(nonConsultant.status,404);await nonConsultant.arrayBuffer();
  const absentConsultant=await request('/api/consultants?id=absent');assert.equal(absentConsultant.status,404);await absentConsultant.arrayBuffer();
