@@ -4,7 +4,7 @@ const timestamps={createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull(
 export const cooperateApplications=sqliteTable("cooperate_applications",{id:text("id").primaryKey(),payload:text("payload",{mode:"json"}).$type<Record<string,unknown>>().notNull(),createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull()});
 
 export const accounts=sqliteTable("accounts",{
- avatarKey:text("avatar_key"),specialty:text("specialty").notNull().default(""),biography:text("biography").notNull().default(""),
+ contactPhone:text("contact_phone").notNull().default(""),avatarKey:text("avatar_key"),specialty:text("specialty").notNull().default(""),biography:text("biography").notNull().default(""),
  id:text("id").primaryKey(),role:text("role",{enum:["admin","user","consultant","agency"]}).notNull(),name:text("name").notNull(),mobile:text("mobile").notNull().unique(),passwordHash:text("password_hash"),address:text("address").notNull().default(""),status:text("status",{enum:["pending","active","suspended","rejected"]}).notNull().default("pending"),nationalId:text("national_id"),agencyId:text("agency_id"),...timestamps,
 },table=>[index("idx_accounts_role_status").on(table.role,table.status)]);
 

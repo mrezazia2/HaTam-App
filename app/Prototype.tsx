@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {PropertyMap,PropertySections} from "./property/PropertySections";
 import PropertyMapExplorer from './components/PropertyMapExplorer';
+import PortalExperience from "./portals/PortalExperience";
+import "./portals/app-consultant-workspace.css";
 import CommunicationsDock from './communications/CommunicationsDock';
 import WorkflowView from './portals/WorkflowView';
 import {useKeyboardInsets} from './mobile';
@@ -487,6 +489,7 @@ function ProfileScreen() {
  const [section,setSection]=useState<'overview'|'visits'|'consultations'>('overview');
  const [account,setAccount]=useState<{name:string;role:"user"|"consultant"|"agency"|"admin"}|null>(null),[loaded,setLoaded]=useState(false);
  useEffect(()=>{fetch('/api/auth/session',{cache:'no-store'}).then(r=>r.json()).then(data=>setAccount(data.account||null)).finally(()=>setLoaded(true))},[]);
+ if(account?.role==="consultant")return <><MobileScroll key="consultant-profile" className="app-screen hatam-scroll"><div className="app-consultant-workspace"><PortalExperience kind="consultant" accountName={account.name}/></div></MobileScroll><CommunicationsDock role="consultant"/></>;
  return <><MobileScroll key="profile" className="app-screen hatam-scroll"><main className="profile-screen" dir="rtl"><Brand/><div className="profile-avatar"><PersonIcon/></div><h1>{account?'سلام، '+account.name:'حساب کاربری'}</h1><p>{loaded?(account?'حساب شما وارد شده است؛ گفت‌وگوها و اعلان‌های واقعی را از دکمه‌های زیر باز کنید.':'برای مشاهدهٔ اطلاعات حساب وارد شوید.'):'در حال دریافت حساب…'}</p>{account&&<><div className="profile-menu"><button onClick={()=>setSection('visits')}>بازدیدهای من</button><button onClick={()=>setSection('consultations')}>مشاوره‌های من</button></div>{section!=='overview'&&<WorkflowView type={section} kind={account.role}/>}</>}</main></MobileScroll>{account&&<CommunicationsDock role={account.role} maxHeight={Math.max(180,insets.availableHeight-240)} onClose={()=>keyboard.hide()}/>}</>;
 }
 

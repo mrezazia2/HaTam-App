@@ -232,6 +232,13 @@
       "when": 1792580000000,
       "tag": "0032_chat_read_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1792585000000,
+      "tag": "0033_account_contact_phone",
+      "breakpoints": true
     }
   ]
 }

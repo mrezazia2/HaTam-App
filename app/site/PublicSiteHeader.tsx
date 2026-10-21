@@ -21,7 +21,8 @@ export default function PublicSiteHeader({ overlay = false }: { overlay?: boolea
   useEffect(()=>{fetch("/api/navigation",{cache:"no-store"}).then(response=>response.ok?response.json():null).then(data=>data&&setNavigation(current=>({...current,siteLogin:data.siteLogin||current.siteLogin,siteMenu:data.siteMenu||current.siteMenu}))).catch(()=>{})},[]);
 
   useEffect(() => {
-    fetch("/api/auth/session", { cache: "no-store" }).then(response => response.json()).then(data => setAccount(data.account || null)).catch(() => setAccount(null));
+    const refresh=()=>fetch("/api/auth/session", { cache: "no-store" }).then(response => response.json()).then(data => setAccount(data.account || null)).catch(() => setAccount(null));
+    refresh();window.addEventListener("hatam:profile-updated",refresh);return()=>window.removeEventListener("hatam:profile-updated",refresh);
   }, []);
   useEffect(() => {
     if (!menuOpen) return;
@@ -47,7 +48,7 @@ export default function PublicSiteHeader({ overlay = false }: { overlay?: boolea
       <div className="public-site-account-actions"><button type="button" className="icon-action" aria-label="بازگشت به صفحه قبل" onClick={()=>{if(history.length>1)history.back();else location.assign("/")}}><ArrowRightIcon/></button>
         {account && <><CommunicationsDock role={account.role} surface="site"/><Link className="icon-action optional-account-action" href={navigation.siteMenu.favorites} aria-label="علاقه‌مندی‌ها"><HeartIcon /></Link></>}
         <button className="icon-action" type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "فعال‌کردن حالت روشن" : "فعال‌کردن حالت تاریک"}>{theme === "dark" ? <SunIcon /> : <MoonIcon />}</button>
-        <Link className="panel-action" href={panelHref}><PersonIcon /><span>{account ? "پنل کاربری" : "ورود به پنل"}</span></Link>
+        <Link className="panel-action" href={panelHref}><PersonIcon /><span>{account ? account.name : "ورود به پنل"}</span></Link>
       </div>
     </div>
   </header>;

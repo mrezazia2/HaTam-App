@@ -1,0 +1,10 @@
+.app-consultant-workspace .portal-page{display:block;min-height:0;padding:0;background:var(--theme-bg)}
+.app-consultant-workspace .portal-sidebar{position:static;width:100%;height:auto;min-height:0;padding:12px;box-sizing:border-box}
+.app-consultant-workspace .portal-sidebar>a:first-child,.app-consultant-workspace .portal-back{display:none}
+.app-consultant-workspace .portal-sidebar nav{display:flex;flex-wrap:wrap;gap:6px;overflow:visible}
+.app-consultant-workspace .portal-sidebar nav button{flex:1 0 42%;min-height:44px;font-size:14px}
+.app-consultant-workspace .portal-content{padding:14px;min-width:0}
+.app-consultant-workspace .portal-header{flex-wrap:wrap;gap:12px}.app-consultant-workspace .portal-header h1{font-size:22px}
+.app-consultant-workspace .portal-header-actions{flex-wrap:wrap}.app-consultant-workspace .portal-profile strong{font-size:16px}
+.app-consultant-workspace :is(input,select,textarea){font-size:16px}
+.app-consultant-workspace .portal-modal{position:fixed;z-index:500}
