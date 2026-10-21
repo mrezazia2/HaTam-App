@@ -12,6 +12,5 @@ export default function SiteShell({ children, title, eyebrow = "املاک حا�
     <PublicSiteHeader />
     <section className="public-site-hero"><div><span>{eyebrow}</span><h1>{managedTitle||title}</h1>{description && <p>{description}</p>}{actions && <div className="public-site-hero-actions">{actions}</div>}</div></section>
     <div className="public-site-content"><ManagedSiteContent onTitle={setManagedTitle}/>{children}</div>
-    <footer className="public-site-footer"><img src={settings.logoUrl} alt="" /><div><strong>{settings.brandName}</strong><span>{settings.slogan}</span></div><nav><Link href="/contact">ارتباط با ما</Link><Link href="/subscriptions">اشتراک‌ها</Link><Link href="/requests">درخواست‌های من</Link></nav></footer>
   </main>;
 }

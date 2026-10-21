@@ -1,6 +1,7 @@
 import { requireRole } from "../auth/server";
+import CommunicationsDock from "../communications/CommunicationsDock";
 import AdminToolbar from "./AdminToolbar";
 import "./toolbar.css";
 
 export const dynamic="force-dynamic";
-export default async function AdminLayout({children}:{children:React.ReactNode}){await requireRole("admin","/admin");return <div className="admin-shell"><AdminToolbar/>{children}</div>}
+export default async function AdminLayout({children}:{children:React.ReactNode}){await requireRole("admin","/admin");return <div className="admin-shell"><AdminToolbar/>{children}<CommunicationsDock role="admin"/></div>}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BellIcon, Cross2Icon, HamburgerMenuIcon, HeartIcon, HomeIcon, MoonIcon, PersonIcon, SunIcon } from "@radix-ui/react-icons";
+import { ArrowRightIcon, BellIcon, Cross2Icon, HamburgerMenuIcon, HeartIcon, HomeIcon, MoonIcon, PersonIcon, SunIcon } from "@radix-ui/react-icons";
 import { useBrand } from "../brand/BrandProvider";
 import { useTheme } from "../theme/ThemeProvider";
 import {defaultNavigationConfig,type NavigationConfig} from "../navigation/config";
@@ -52,7 +52,7 @@ export default function PublicSiteHeader({ overlay = false }: { overlay?: boolea
         <Link href={navigation.siteMenu.consultants} onClick={closeMenu}>مشاوران</Link>
         <Link href={navigation.siteMenu.blog} onClick={closeMenu}>وبلاگ</Link>
       </nav>
-      <div className="public-site-account-actions">
+      <div className="public-site-account-actions"><button type="button" className="icon-action" aria-label="بازگشت به صفحه قبل" onClick={()=>{if(history.length>1)history.back();else location.assign("/")}}><ArrowRightIcon/></button>
         {account && <><Link className="icon-action optional-account-action" href={navigation.siteMenu.notifications} aria-label={unread?`${unread.toLocaleString("fa-IR")} اعلان خوانده‌نشده`:"اعلان‌ها"}><BellIcon />{unread>0&&<i className="site-unread-badge">{Math.min(unread,99).toLocaleString("fa-IR")}</i>}</Link><Link className="icon-action optional-account-action" href={navigation.siteMenu.favorites} aria-label="علاقه‌مندی‌ها"><HeartIcon /></Link></>}
         <button className="icon-action" type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "فعال‌کردن حالت روشن" : "فعال‌کردن حالت تاریک"}>{theme === "dark" ? <SunIcon /> : <MoonIcon />}</button>
         <Link className="panel-action" href={panelHref}><PersonIcon /><span>{account ? "پنل کاربری" : "ورود به پنل"}</span></Link>

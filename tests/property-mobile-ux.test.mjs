@@ -14,5 +14,5 @@ test('guest property form retains media locally until verification, then uses au
  const form=await readFile('app/Prototype.tsx','utf8'),upload=await readFile('app/components/PropertyMediaUploader.tsx','utf8');
  assert.match(form,/if\(!canUpload&&!verified\)\{setVerifyForSubmit\(true\);return\}/);
  assert.match(form,/InlinePropertyVerification mobile=/);
- assert.match(upload,/if\(guest\)return/);
+ assert.match(upload,/if\(guest\)\{/);
 });

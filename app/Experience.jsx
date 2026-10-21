@@ -1,5 +1,6 @@
 "use client";
 
+import {propertyBuildingYear} from "./mobile/property-filters";
 import ManagedSiteContent from "./site/ManagedSiteContent";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -137,7 +138,7 @@ function HomePage() {
   const [toast, setToast] = useState("");
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
-  const [filters, setFilters] = useState({ regions: [], neighborhoods: [], kind: "", budget: "", size: "", minPrice: "", maxPrice: "", minSize: "", maxSize: "" });
+  const [filters, setFilters] = useState({ regions: [], neighborhoods: [], kind: "", budget: "", size: "", minPrice: "", maxPrice: "", minSize: "", maxSize: "", beds:"", minYear:"", maxYear:"", floors:"", units:"", amenities:[] });
   const setFilter = (name, value) => setFilters((current) => ({ ...current, [name]: value }));
   const resetFilters = () => { setFilters({ regions: [], neighborhoods: [], kind: "", budget: "", size: "", minPrice: "", maxPrice: "", minSize: "", maxSize: "" }); setQuery(""); setSmartMatchIds(null); };
   const loadProperties = () => {
@@ -172,8 +173,9 @@ function HomePage() {
     const sizeMatches = !filters.size || (filters.size === "under-100" ? p.size < 100 : p.size >= 100);
     const smartMatches = !smartMatchIds || smartMatchIds.includes(String(p.id));
     const locationMatches = filters.neighborhoods.length ? filters.neighborhoods.some(item => p.area.includes(item)) : (!filters.regions.length || filters.regions.some(region => sameDistrict(p.district, region)));
-    return smartMatches && textMatches && locationMatches && (!filters.kind || p.kind === filters.kind) && budgetMatches && sizeMatches && (!filters.minPrice || p.priceValue >= Number(filters.minPrice)) && (!filters.maxPrice || p.priceValue <= Number(filters.maxPrice)) && (!filters.minSize || p.size >= Number(filters.minSize)) && (!filters.maxSize || p.size <= Number(filters.maxSize));
-  }), [query, filters, smartMatchIds]);
+    const d=p.details||{},year=propertyBuildingYear(d);const extraMatches=(!filters.beds||p.bedrooms>=Number(filters.beds))&&(!filters.minYear||year>=Number(filters.minYear))&&(!filters.maxYear||year<=Number(filters.maxYear))&&(!filters.floors||Number(d.totalFloors||d.floors)===Number(filters.floors))&&(!filters.units||Number(d.unitsPerFloor||d.units)===Number(filters.units))&&(!filters.amenities?.length||filters.amenities.every(x=>(d.amenities||[]).includes(x)));
+    return extraMatches && smartMatches && textMatches && locationMatches && (!filters.kind || p.kind === filters.kind) && budgetMatches && sizeMatches && (!filters.minPrice || p.priceValue >= Number(filters.minPrice)) && (!filters.maxPrice || p.priceValue <= Number(filters.maxPrice)) && (!filters.minSize || p.size >= Number(filters.minSize)) && (!filters.maxSize || p.size <= Number(filters.maxSize));
+  }), [properties, query, filters, smartMatchIds]);
   const hasFilters = Boolean(query || Object.values(filters).some(value => Array.isArray(value) ? value.length > 0 : Boolean(value)));
   const toggleFavorite = async (id) => {
     if (!account || account.role !== "user") return go(`/login/user?returnTo=${encodeURIComponent("/")}`);
@@ -230,7 +232,7 @@ function HomePage() {
           <label><span className="sr-only">نوع ملک</span><select aria-label="نوع ملک" value={filters.kind} onChange={(e) => setFilter("kind", e.target.value)}><option value="">همه ملک‌ها</option><option>آپارتمان</option><option>پنت‌هاوس</option></select><ChevronDownIcon /></label>
           <button className="more-filter" aria-expanded={moreFiltersOpen} onClick={() => setMoreFiltersOpen((open) => !open)}>فیلتر بیشتر <PlusIcon /></button>
         </div>
-        {moreFiltersOpen && <div className="advanced-filter" role="group" aria-label="فیلترهای بیشتر"><label>قیمت از<input inputMode="numeric" value={filters.minPrice ? Number(filters.minPrice).toLocaleString("fa-IR") : ""} onChange={(e) => setFilter("minPrice", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="تومان" /></label><label>قیمت تا<input inputMode="numeric" value={filters.maxPrice ? Number(filters.maxPrice).toLocaleString("fa-IR") : ""} onChange={(e) => setFilter("maxPrice", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="تومان" /></label><label>متراژ از<input inputMode="numeric" value={filters.minSize} onChange={(e) => setFilter("minSize", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="متر" /></label><label>متراژ تا<input inputMode="numeric" value={filters.maxSize} onChange={(e) => setFilter("maxSize", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="متر" /></label><button onClick={resetFilters}>پاک کردن فیلترها</button></div>}
+        {moreFiltersOpen && <div className="advanced-filter" role="group" aria-label="فیلترهای بیشتر"><label>قیمت از<input inputMode="numeric" value={filters.minPrice ? Number(filters.minPrice).toLocaleString("fa-IR") : ""} onChange={(e) => setFilter("minPrice", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="تومان" /></label><label>قیمت تا<input inputMode="numeric" value={filters.maxPrice ? Number(filters.maxPrice).toLocaleString("fa-IR") : ""} onChange={(e) => setFilter("maxPrice", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="تومان" /></label><label>متراژ از<input inputMode="numeric" value={filters.minSize} onChange={(e) => setFilter("minSize", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="متر" /></label><label>متراژ تا<input inputMode="numeric" value={filters.maxSize} onChange={(e) => setFilter("maxSize", latinDigits(e.target.value).replace(/\D/g, ""))} placeholder="متر" /></label>{[["beds","حداقل تعداد خواب"],["minYear","سال ساخت از"],["maxYear","سال ساخت تا"],["floors","کل طبقات ساختمان"],["units","واحد در طبقه"]].map(([key,label])=><label key={key}>{label}<input inputMode="numeric" value={filters[key]||""} placeholder={key.includes("Year")?"13..":""} onChange={e=>setFilter(key,latinDigits(e.target.value).replace(/\D/g,""))}/></label>)}<div className="site-amenity-switches" role="group" aria-label="امکانات ملک">{["آسانسور","بالکن","حیاط","پارکینگ","انباری","پارک موتور"].map(item=><button type="button" key={item} role="switch" aria-checked={filters.amenities?.includes(item)||false} onClick={()=>setFilter("amenities",filters.amenities?.includes(item)?filters.amenities.filter(x=>x!==item):[...(filters.amenities||[]),item])}>{item}<span>{filters.amenities?.includes(item)?"روشن":"خاموش"}</span></button>)}</div><button onClick={resetFilters}>پاک کردن فیلترها</button></div>}
         <div className="quick-action-grid">
           {quickActions.map(({ Icon, title, text }) => <button key={title} onClick={() => runQuickAction(title)}><Icon /><span><strong>{title}</strong><small>{text}</small></span></button>)}
         </div>

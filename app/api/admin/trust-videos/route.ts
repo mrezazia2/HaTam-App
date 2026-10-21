@@ -1,7 +1,7 @@
 import {env} from "cloudflare:workers";
 import {asc,eq} from "drizzle-orm";
 import {getDb} from "../../../../db";
-import {trustVideos} from "../../../../db/schema";
+import {propertyMedia,trustVideos} from "../../../../db/schema";
 import {forbidden,requireAdmin} from "../../_lib/authorization";
 import {writeAudit} from "../../_lib/audit";
 import {getUploadSettings,validateUpload} from "../../_lib/upload-settings";
@@ -10,6 +10,7 @@ export const dynamic="force-dynamic";
 export async function GET(request:Request){if(!await requireAdmin(request))return forbidden();const rows=await getDb().select().from(trustVideos).orderBy(asc(trustVideos.sortOrder));return Response.json({ok:true,items:rows.map(row=>({...row,url:`/api/trust-videos/${row.id}`}))})}
 export async function POST(request:Request){
  const admin=await requireAdmin(request);if(!admin)return forbidden();
+ if(request.headers.get('content-type')?.includes('application/json')){const body=await request.json(),db=getDb(),media=(await db.select().from(propertyMedia).where(eq(propertyMedia.objectKey,String(body.mediaKey||''))).limit(1))[0];const existing=(await db.select().from(trustVideos).where(eq(trustVideos.objectKey,String(body.mediaKey||''))).limit(1))[0];if(existing&&media?.ownerAccountId===admin.id)return Response.json({ok:true,id:existing.id});if(!media||media.ownerAccountId!==admin.id||media.propertyId||media.urgentSaleId||media.status!=='active'||!media.contentType.startsWith('video/'))return Response.json({error:'INVALID_MEDIA'},{status:400});const id=`TV-${crypto.randomUUID()}`,now=new Date();await db.batch([db.insert(trustVideos).values({id,title:String(body.title||media.fileName).slice(0,160),objectKey:media.objectKey,contentType:media.contentType,size:media.size,enabled:true,sortOrder:Number(body.sortOrder)||Date.now(),createdAt:now,updatedAt:now}),db.update(propertyMedia).set({status:'deleted',updatedAt:now}).where(eq(propertyMedia.id,media.id))]);await writeAudit(db,admin,'trust_video.upload','trust_video',id,'ویدیو به اسلایدر عمومی اعتماد افزوده شد.',{size:media.size});return Response.json({ok:true,id},{status:201})}
  const bucket=env.MEDIA;if(!bucket)return Response.json({ok:false,error:"MEDIA_STORAGE_UNAVAILABLE"},{status:503});
  let form:FormData;try{form=await request.formData()}catch{return Response.json({ok:false,error:"INVALID_MULTIPART"},{status:400})}
  const file=form.get("video");if(!(file instanceof File))return Response.json({ok:false,error:"VIDEO_REQUIRED"},{status:400});

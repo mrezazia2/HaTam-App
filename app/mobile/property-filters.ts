@@ -11,7 +11,7 @@ export function parsePropertyFilters(query:URLSearchParams):PropertyFilters|unde
  return {minPrice:number("minPrice"),maxPrice:number("maxPrice"),minArea:number("minArea"),maxArea:number("maxArea"),beds:Number(number("beds"))||0,regions:list("regions"),neighborhoods:list("neighborhoods"),minBuildYear:number("minBuildYear"),maxBuildYear:number("maxBuildYear"),amenities:list("amenities"),latitude:decimal("latitude"),longitude:decimal("longitude"),radius:Math.min(Number(number("radius"))||0,50_000)};
 }
 export function propertyBuildingYear(details:Record<string,unknown>,now=new Date()){
- const direct=Number(details.buildYear||details.buildingYear);if(direct>=1300&&direct<=1500)return direct;
+ const direct=Number(details.buildYear||details.buildingYear||details.buildingAge);if(direct>=1300&&direct<=1500)return direct;
  const age=Number(details.age);if(age>=1300&&age<=1500)return age;
  if(age>=0&&age<=200&&details.age!==undefined){const year=Number(new Intl.DateTimeFormat("en-US-u-ca-persian",{year:"numeric"}).formatToParts(now).find(part=>part.type==="year")?.value);return Number.isFinite(year)?year-age:undefined}
  return undefined;

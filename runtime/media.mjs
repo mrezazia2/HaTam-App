@@ -26,9 +26,9 @@ export class DiskMedia {
     }catch(error){await unlink(temporary).catch(()=>{});throw error;}
     return {key,size};
   }
-  async get(key){
+  async get(key,options){
     const filename=this.path(key);
-    try{const info=await stat(filename);if(!info.isFile())return null;return {body:Readable.toWeb(createReadStream(filename)),size:info.size};}
+    try{const info=await stat(filename);if(!info.isFile())return null;return {body:Readable.toWeb(createReadStream(filename,options?.range?{start:options.range.offset,end:Math.min(info.size-1,options.range.offset+options.range.length-1)}:undefined)),size:info.size};}
     catch(error){if(error.code==='ENOENT')return null;throw error;}
   }
   async delete(key){try{await unlink(this.path(key));}catch(error){if(error.code!=='ENOENT')throw error;}}

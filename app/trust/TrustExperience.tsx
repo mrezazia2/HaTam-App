@@ -5,7 +5,7 @@ import {useEffect,useRef,useState} from "react";
 type Video={id:string;title:string;url:string};
 export default function TrustExperience({onBack,onSell,onBuy,embedded=false}:{onBack?:()=>void;onSell?:()=>void;onBuy?:()=>void;embedded?:boolean}){
  const [videos,setVideos]=useState<Video[]>([]),[active,setActive]=useState(0);const rail=useRef<HTMLDivElement>(null);
- useEffect(()=>{fetch("/api/trust-videos",{cache:"no-store"}).then(r=>r.json()).then(d=>setVideos(d.items||[])).catch(()=>setVideos([]))},[]);
+ useEffect(()=>{let alive=true;const load=()=>fetch("/api/trust-videos",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(d=>{if(alive){setVideos(d.items||[]);setActive(index=>Math.max(0,Math.min(index,(d.items||[]).length-1)))}}).catch(()=>{});void load();const visible=()=>{if(document.visibilityState==="visible")void load()};document.addEventListener("visibilitychange",visible);window.addEventListener("focus",visible);const timer=window.setInterval(visible,30000);return()=>{alive=false;window.clearInterval(timer);document.removeEventListener("visibilitychange",visible);window.removeEventListener("focus",visible)}},[]);
  const move=(next:number)=>{if(!videos.length)return;const index=(next+videos.length)%videos.length;setActive(index);rail.current?.children[index]?.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"})};
  return <main className={`trust-page${embedded?" trust-page-embedded":""}`} dir="rtl"><section className="trust-shell">
   {!embedded&&<header>{onBack?<button onClick={onBack} aria-label="بازگشت به اپ">‹</button>:<Link href="/app" aria-label="بازگشت به اپ">‹</Link>}<div><span>املاک حاتم</span><h1>اعتماد شما</h1></div><i>♥</i></header>}
