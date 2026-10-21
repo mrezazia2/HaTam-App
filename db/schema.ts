@@ -150,3 +150,5 @@ export const propertyRequests=sqliteTable("property_requests",{
 export const auditLogs=sqliteTable("audit_logs",{
  id:text("id").primaryKey(),actorAccountId:text("actor_account_id"),actorRole:text("actor_role").notNull(),action:text("action").notNull(),entityType:text("entity_type").notNull(),entityId:text("entity_id"),summary:text("summary").notNull(),metadata:text("metadata",{mode:"json"}).$type<Record<string,unknown>>().notNull(),createdAt:integer("created_at",{mode:"timestamp_ms"}).notNull(),
 },table=>[index("idx_audit_logs_created").on(table.createdAt),index("idx_audit_logs_entity").on(table.entityType,table.entityId),index("idx_audit_logs_actor").on(table.actorAccountId,table.createdAt)]);
+
+export const chatReadReceipts=sqliteTable("chat_read_receipts",{id:text("id").primaryKey(),accountId:text("account_id").notNull(),conversationId:text("conversation_id").notNull(),readAt:integer("read_at",{mode:"timestamp_ms"}).notNull()},table=>[uniqueIndex("uq_chat_read_receipt").on(table.accountId,table.conversationId)]);

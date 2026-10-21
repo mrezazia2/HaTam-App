@@ -37,6 +37,7 @@ import "./brand/scoped-appearance.css";
 import "./auth/surface-contrast.css";
 import "./auth/passkey-ui.css";
 import "./admin/light-controls.css";
+import "./responsive-admin-controls.css";
 import "./pwa/pwa.css";
 import PwaInstallPrompt from "./pwa/PwaInstallPrompt";
 

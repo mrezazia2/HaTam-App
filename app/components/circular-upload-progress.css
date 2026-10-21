@@ -1,0 +1,6 @@
+.circular-upload{position:relative;display:inline-grid;place-items:center;width:58px;height:58px;flex:0 0 58px;border-radius:50%;color:#fff;background:#08271edb;font-size:13px;line-height:1;box-sizing:border-box}
+.circular-upload svg{position:absolute;inset:3px;width:52px;height:52px;transform:rotate(-90deg);fill:none;stroke-width:3}
+.upload-ring-track{stroke:#ffffff30}.upload-ring-fill{stroke:currentColor;stroke-linecap:round;transition:stroke-dashoffset .15s linear}.circular-upload.complete{color:#38dc8b}.circular-upload.failed{color:#ff8179}.circular-upload:is(.complete,.failed) b{font-size:28px}
+.upload-file-state:has(.circular-upload){inset:8px auto auto 8px;bottom:auto;padding:0;background:transparent;display:flex;align-items:center;gap:6px;max-width:calc(100% - 16px)}
+.trust-upload-progress:has(.circular-upload){display:flex;gap:10px}.property-verify-dialog [role=status]:has(.circular-upload){display:flex;align-items:center;gap:12px;overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.upload-ring-fill{transition:none}}

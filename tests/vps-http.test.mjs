@@ -258,6 +258,12 @@ test('VPS production HTTP: public routes, authenticated panels and blocked previ
   for(const role of ['user','agency','admin','consultant']){
    const r=await request(`/api/chat?conversationId=${conversationId}`,{headers:{cookie:cookies[role]}});assert.equal(r.status,role==='consultant'?403:200);await r.arrayBuffer();
   }
+  const adminSummary=await (await request('/api/chat',{headers:{cookie:cookies.admin}})).json();assert.equal(adminSummary.items.find(x=>x.id===conversationId).unread,0,'admin read receipt clears only their badge');
+  const ownNoticeRead=await request('/api/notifications',{method:'PATCH',headers:{cookie:cookies.agency,'content-type':'application/json'},body:JSON.stringify({all:true})});assert.equal(ownNoticeRead.status,200);await ownNoticeRead.arrayBuffer();
+  const noticeSummary=await (await request('/api/notifications',{headers:{cookie:cookies.agency}})).json();assert.equal(noticeSummary.unread,0);
+  await db.prepare("INSERT INTO notifications(id,account_id,type,title,body,created_at) VALUES ('other-unread','user','test','Test','Private',?)").bind(Date.now()).run();
+  await (await request('/api/notifications',{method:'PATCH',headers:{cookie:cookies.agency,'content-type':'application/json'},body:JSON.stringify({all:true})})).arrayBuffer();
+  assert.equal((await db.prepare("SELECT read_at FROM notifications WHERE id='other-unread'").first()).read_at,null,'mark all cannot modify another account');
   const unwanted=await request('/api/chat',{method:'POST',headers:{cookie:cookies.consultant,'content-type':'application/json'},body:JSON.stringify({conversationId,body:'Unauthorized'})});assert.equal(unwanted.status,403);await unwanted.arrayBuffer();
   await db.prepare("INSERT INTO property_media(id,object_key,owner_account_id,file_name,content_type,size,status,created_at,updated_at) VALUES ('private-media','properties/user/private.jpg','user','private.jpg','image/jpeg',10,'active',?,?)").bind(Date.now(),Date.now()).run();
   const privateMedia=await request('/api/property-media?key=properties%2Fuser%2Fprivate.jpg',{headers:{cookie:cookies.consultant}});assert.equal(privateMedia.status,403);await privateMedia.arrayBuffer();

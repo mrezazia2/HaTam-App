@@ -1,6 +1,6 @@
-import {asc,desc,eq,inArray} from "drizzle-orm";
+import {and,asc,desc,eq,inArray} from "drizzle-orm";
 import {getDb} from "../../../db";
-import {accounts,conversationParticipants,conversations,messages,notifications,smsOutbox} from "../../../db/schema";
+import {chatReadReceipts,accounts,conversationParticipants,conversations,messages,notifications,smsOutbox} from "../../../db/schema";
 import {getRequestAccount} from "../_lib/authorization";
 import {writeAudit} from "../_lib/audit";
 
@@ -11,7 +11,9 @@ async function conversationSummary(db:ReturnType<typeof getDb>,conversation:type
  const members=await db.select().from(conversationParticipants).where(eq(conversationParticipants.conversationId,conversation.id));
  const memberAccounts=members.length?await db.select({id:accounts.id,name:accounts.name,role:accounts.role,status:accounts.status}).from(accounts).where(inArray(accounts.id,members.map(x=>x.accountId))):[];
  const membership=members.find(x=>x.accountId===viewerId),thread=await db.select().from(messages).where(eq(messages.conversationId,conversation.id)).orderBy(desc(messages.createdAt));
- const unread=thread.filter(x=>x.senderAccountId!==viewerId&&(!membership?.lastReadAt||x.createdAt>membership.lastReadAt)&&x.moderationStatus!=="hidden").length;
+ const receipt=(await db.select().from(chatReadReceipts).where(and(eq(chatReadReceipts.accountId,viewerId),eq(chatReadReceipts.conversationId,conversation.id))).limit(1))[0];
+ const lastReadAt=receipt?.readAt||membership?.lastReadAt;
+ const unread=thread.filter(x=>x.senderAccountId!==viewerId&&(!lastReadAt||x.createdAt>lastReadAt)&&x.moderationStatus!=="hidden").length;
  return {...conversation,participants:memberAccounts,lastMessage:thread[0]?{body:thread[0].moderationStatus==="hidden"?"پیام توسط مدیر مخفی شده است.":thread[0].body,createdAt:thread[0].createdAt}:null,unread};
 }
 
@@ -21,9 +23,12 @@ export async function GET(request:Request){
  if(conversationId){
   const members=await db.select().from(conversationParticipants).where(eq(conversationParticipants.conversationId,conversationId));
   if(account.role!=="admin"&&!members.some(x=>x.accountId===account.id))return Response.json({ok:false,error:"FORBIDDEN"},{status:403});
+  const readAt=new Date();
   const rows=await db.select().from(messages).where(eq(messages.conversationId,conversationId)).orderBy(asc(messages.createdAt));
   const senderIds=Array.from(new Set(rows.map(x=>x.senderAccountId))),senders=senderIds.length?await db.select({id:accounts.id,name:accounts.name,role:accounts.role}).from(accounts).where(inArray(accounts.id,senderIds)):[];
-  if(account.role!=="admin")await db.update(conversationParticipants).set({lastReadAt:new Date()}).where(eq(conversationParticipants.id,members.find(x=>x.accountId===account.id)!.id));
+  if(!members.length)return Response.json({ok:false,error:"NOT_FOUND"},{status:404});
+  await db.insert(chatReadReceipts).values({id:`CR-${crypto.randomUUID()}`,accountId:account.id,conversationId,readAt}).onConflictDoUpdate({target:[chatReadReceipts.accountId,chatReadReceipts.conversationId],set:{readAt}});
+  if(account.role!=="admin")await db.update(conversationParticipants).set({lastReadAt:readAt}).where(eq(conversationParticipants.id,members.find(x=>x.accountId===account.id)!.id));
   const visible=account.role==="admin"?rows:rows.filter(x=>x.moderationStatus!=="hidden");
   return Response.json({ok:true,items:visible.map(row=>({...row,sender:senders.find(x=>x.id===row.senderAccountId)||{id:row.senderAccountId,name:"کاربر حاتم",role:"user"}}))});
  }
@@ -35,7 +40,7 @@ export async function GET(request:Request){
 
 export async function POST(request:Request){
  const account=await getRequestAccount(request);if(!account||account.status!=="active")return Response.json({ok:false,error:"AUTH_REQUIRED"},{status:401});
- const value=await request.json() as Record<string,any>,db=getDb(),timestamp=new Date();
+ const value=await request.json() as {action?:string;participantAccountIds?:unknown[];kind?:"direct"|"property"|"visit"|"contract"|"support";subject?:string;propertyId?:string;agencyId?:string;conversationId?:string;body?:string},db=getDb(),timestamp=new Date();
  if(value.action==="create"){
   const requested=Array.from(new Set(Array.isArray(value.participantAccountIds)?value.participantAccountIds.map(String):[])).filter(Boolean),targets=requested.length?await db.select().from(accounts).where(inArray(accounts.id,requested)):[];
   if(targets.length!==requested.length||targets.some(x=>x.status!=="active"))return Response.json({ok:false,error:"PARTICIPANT_NOT_AVAILABLE"},{status:400});

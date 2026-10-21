@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Cross2Icon, ImageIcon, UploadIcon, VideoIcon } from "@radix-ui/react-icons";
 import "./property-media-uploader.css";
+import CircularUploadProgress from './CircularUploadProgress';
 import type {UploadProgress} from './upload-progress';
 import {uploadPropertyFile} from './upload-property-media';
 
@@ -69,10 +70,10 @@ export default function PropertyMediaUploader({ role, value, onChange,guest=fals
   return <section className="property-media-uploader" dir="rtl">
     {guest&&<p>فایل‌ها فعلاً روی همین دستگاه آماده می‌شوند؛ در ثبت نهایی، پس از تأیید شماره، به سرور ارسال می‌شوند. این صفحه را نبندید.</p>}
     <label><UploadIcon /><strong>{busy ? "در حال بارگذاری..." : "افزودن عکس و ویدیو ملک"}</strong><small>حداکثر {settings.maxPropertyFiles.toLocaleString("fa-IR")} فایل؛ تصویر تا {settings.imageMaxMb.toLocaleString("fa-IR")} و ویدیو تا {settings.videoMaxMb.toLocaleString("fa-IR")} مگابایت</small><input disabled={busy || value.length >= settings.maxPropertyFiles} type="file" accept={mediaExtensions.map(extension => `.${extension}`).join(",")} multiple onChange={event => { void upload(event.target.files); event.target.value = ""; }} /></label>
-    {queue.length>0&&<div className="property-media-grid">{queue.map((item,index)=><article key={index}><img src={item.url} alt={item.file.name}/><div className={`upload-file-state ${item.progress.state}`} role="status"><progress max="100" value={item.progress.percent}/><b>{item.progress.state==="failed"?"✕ ناموفق":item.progress.percent.toLocaleString("fa-IR")+"٪"}</b>{item.progress.state==="failed"&&<button onClick={async()=>{try{const uploaded=await uploadPropertyFile(item.file,role,progress=>setQueue(current=>current.map(x=>x.file===item.file?{...x,progress}:x)));onChange([...value,uploaded]);setQueue(current=>current.filter(x=>x.file!==item.file))}catch{}}}>ادامه آپلود</button>}</div></article>)}</div>}
+    {queue.length>0&&<div className="property-media-grid">{queue.map((item,index)=><article key={index}><img src={item.url} alt={item.file.name}/><div className={`upload-file-state ${item.progress.state}`} role="status"><CircularUploadProgress {...item.progress}/>{item.progress.state==="failed"&&<button onClick={async()=>{try{const uploaded=await uploadPropertyFile(item.file,role,progress=>setQueue(current=>current.map(x=>x.file===item.file?{...x,progress}:x)));onChange([...value,uploaded]);setQueue(current=>current.filter(x=>x.file!==item.file))}catch{}}}>ادامه آپلود</button>}</div></article>)}</div>}
     {value.length > 0 && <div className="property-media-grid">{value.map(item => <article key={item.key}>
       {item.type.startsWith("video") ? <video src={item.url} controls preload="metadata" /> : <img src={item.url} alt={item.name} />}
-      <div className={`upload-file-state ${item.file?(fileProgress[item.name]?.state||"staged"):"complete"}`} role="status">{item.file?<><progress max="100" value={fileProgress[item.name]?.percent||0}/><b>{fileProgress[item.name]?.state==="failed"?"✕ ناموفق":(fileProgress[item.name]?.percent||0).toLocaleString("fa-IR")+"٪ · آماده ارسال"}</b></>:<b>✓ آپلود کامل</b>}</div><button className="media-delete-button" type="button" disabled={busy} onClick={() => remove(item)} aria-label={`حذف ${item.name}`}><Cross2Icon /></button>
+      <div className={`upload-file-state ${item.file?(fileProgress[item.name]?.state||"staged"):"complete"}`} role="status"><CircularUploadProgress percent={item.file?(fileProgress[item.name]?.percent||0):100} state={item.file?(fileProgress[item.name]?.state||"staged"):"complete"}/></div><button className="media-delete-button" type="button" disabled={busy} onClick={() => remove(item)} aria-label={`حذف ${item.name}`}><Cross2Icon /></button>
       <span>{item.type.startsWith("video") ? <VideoIcon /> : <ImageIcon />}{item.key === coverKey ? <b>کاور</b> : item.type.startsWith("image/") && <button className="media-cover-button" type="button" onClick={() => makeCover(item)}>انتخاب کاور</button>}<small>{item.name}</small></span>
     </article>)}</div>}
     {error && <p>{error}</p>}
