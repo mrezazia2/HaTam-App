@@ -4,7 +4,7 @@
 .communications-panel .chat-shell{flex:1;height:auto;min-height:0;overflow:hidden;grid-template-columns:210px minmax(0,1fr)}
 .chat-shell>main,.chat-shell>aside{min-height:0;min-width:0;overflow:hidden}.chat-shell>aside{overflow-y:auto;overscroll-behavior:contain}
 .chat-shell .message-list{min-height:0;flex:1 1 0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.message-list article{overflow-wrap:anywhere}.message-list article p{padding:3px 0;text-align:start;white-space:pre-wrap;color:inherit}
+.message-list article{overflow-wrap:anywhere}.communications-panel .message-list article p{display:block!important;padding:3px 0;text-align:start;white-space:pre-wrap;color:var(--theme-text,#edf4ef)!important;font-size:15px!important;line-height:1.8}
 .chat-shell footer,.chat-context{flex-shrink:0}.chat-context{flex-wrap:wrap}.chat-back{display:none}
 .communications-panel .notice-list{height:auto;min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box}
 .notice-list .notice-read-all{position:sticky;top:0;z-index:2;display:block;min-height:44px;text-align:center;background:var(--theme-surface,#173e2f);color:var(--theme-text,#fff);border:1px solid var(--theme-border,#567060)}
