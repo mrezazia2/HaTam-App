@@ -26,7 +26,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (row.status !== "published" && !manages && !(row.status==='vip'&&await hasVipAccess(account))) return Response.json({ ok: false, error: "NOT_FOUND" }, { status: 404 });
   const rows = await db.select().from(propertyMedia).where(and(eq(propertyMedia.propertyId, id), eq(propertyMedia.status, "active")));
   const advisor = row.consultantAccountId
-    ? (await db.select({ id: accounts.id, name: accounts.name, mobile: accounts.mobile, status: accounts.status }).from(accounts).where(eq(accounts.id, row.consultantAccountId)).limit(1))[0]
+    ? (await db.select({ id: accounts.id, name: accounts.name, mobile: accounts.mobile,contactPhone:accounts.contactPhone, status: accounts.status }).from(accounts).where(eq(accounts.id, row.consultantAccountId)).limit(1))[0]
     : null;
   const media = rows.map(item => ({
     key: item.objectKey,
@@ -35,7 +35,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     type: item.contentType,
     size: item.size,
   }));
-  const publicAdvisor = advisor?.status === "active" ? { id: advisor.id, name: advisor.name || "مشاور حاتم", mobile: advisor.mobile } : null;
+  const publicAdvisor = advisor?.status === "active" ? { id: advisor.id, name: advisor.name || "مشاور حاتم", mobile: advisor.contactPhone||advisor.mobile } : null;
   if (!manages) return Response.json({ ok: true, item: publicProperty(row), media, advisor: publicAdvisor },{headers:{'cache-control':'private, no-store'}});
   return Response.json({
     ok: true,

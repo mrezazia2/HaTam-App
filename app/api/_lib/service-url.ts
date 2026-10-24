@@ -13,7 +13,7 @@ export function serviceUrl(value:string, approvedHosts:string) {
 export async function fetchService(value:string,init:RequestInit,approvedHosts:string,send:typeof fetch=fetch) {
  const url=serviceUrl(value,approvedHosts);
  // Redirects could move credentials to an unapproved destination.
- const response=await send(url,{...init,redirect:"error"});
+ const response=await send(url,{...init,signal:init.signal||AbortSignal.timeout(30_000),redirect:"error"});
  if(response.status>=300&&response.status<400)throw new Error("SERVICE_REDIRECT_BLOCKED");
  return response;
 }

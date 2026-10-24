@@ -49,3 +49,7 @@ body:has(.portal-consultant) .global-theme-toggle{display:none!important}
 .app-consultant-workspace .portal-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 .app-shared-header>div:has(#app-consultant-communications-slot){display:flex;align-items:center;gap:4px}
 @media(max-width:400px){.app-shared-header:has(#app-consultant-communications-slot) .brand{max-width:75px}.app-shared-header .communications-launchers button{width:36px;min-height:40px;height:40px}.app-shared-header .communications-launchers{gap:3px}}
+
+.urgent-assigned-media{display:flex;gap:12px;overflow-x:auto;padding:12px 0}.urgent-assigned-media a{flex:0 0 180px;color:var(--theme-text)}.urgent-assigned-media :is(img,video){width:180px;height:120px;object-fit:cover}.hatam-app .archive-property aside strong{white-space:nowrap;font-size:clamp(11px,3vw,15px)}.app-clear-manual-filters{min-height:44px;margin:8px 0;padding:8px 14px;border:1px solid var(--theme-border);border-radius:12px;color:var(--theme-text);background:var(--theme-surface)}.advisor-profile-link{display:grid;text-align:right;gap:5px;background:none;border:0;color:inherit}
+
+.hatam-app .archive-property aside{min-width:125px;flex-shrink:0}.hatam-app .archive-property{grid-template-columns:80px minmax(0,1fr) minmax(125px,auto)}.single-property .site-property-advisor a{display:inline-flex;align-items:center;min-height:44px;padding:8px 14px;margin:6px;border:1px solid var(--theme-border);border-radius:10px;color:var(--theme-text);text-decoration:none}

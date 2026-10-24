@@ -38,3 +38,5 @@
  .public-site-account-actions{flex-wrap:wrap}.public-site-header .site-header-communications .communications-launchers button{width:38px;height:40px;min-height:40px}.site-header-communications .communications-launchers{gap:4px}
  .site-notice-list>button{padding:14px;gap:10px}.site-manual-filter-button{padding:10px 14px}}
 @media(max-width:380px){.site-archive-search-row{gap:8px}.site-manual-filter-button{font-size:14px;padding:8px 10px}.site-notice-list .site-notice-symbol{width:32px;height:32px;flex-basis:32px}}
+
+.public-site-header nav{min-width:0;overflow-x:auto;scrollbar-width:thin}.public-site-header nav a{white-space:nowrap;flex-shrink:0}

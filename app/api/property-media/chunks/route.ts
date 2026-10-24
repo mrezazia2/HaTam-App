@@ -6,8 +6,7 @@ import {getRequestAccount} from '../../_lib/authorization';
 import {getUploadSettings,validateUpload} from '../../_lib/upload-settings';
 import {trustedMutation} from '../../../auth/security';
 import {writeAudit} from '../../_lib/audit';
-const partSize=4*1024*1024;
-type Upload={owner:string;name:string;type:string;size:number;parts:number;expires:number;state:string;item?:Record<string,unknown>};
+type Upload={owner:string;name:string;type:string;size:number;parts:number;expires:number;state:string;partSize?:number;item?:Record<string,unknown>};
 export async function POST(request:Request){
  if(!trustedMutation(request))return Response.json({error:'UNTRUSTED_ORIGIN'},{status:403});
  const account=await getRequestAccount(request);
@@ -16,6 +15,7 @@ export async function POST(request:Request){
  const db=getDb(),url=new URL(request.url),action=url.searchParams.get('action');
  if(action==='init'){
   let input;try{input=await request.json()}catch{return Response.json({error:'INVALID_FILE'},{status:400})}
+  const partSize=Math.min(4*1024*1024,Math.max(256*1024,Number(input.partSize)||4*1024*1024));
   const size=Number(input.size),name=String(input.name||'').slice(0,240),type=String(input.type||'');
   if(!Number.isSafeInteger(size)||!name)return Response.json({error:'INVALID_FILE'},{status:400});
   const validation=validateUpload({name,type,size} as File,await getUploadSettings(),'property');
@@ -26,7 +26,7 @@ export async function POST(request:Request){
    await db.delete(appConfigurations).where(eq(appConfigurations.id,row.id));
   }}
   if(rows.filter(row=>Number(row.value.expires)>Date.now()&&row.value.state!=='complete').length>=3)return Response.json({error:'UPLOAD_LIMIT'},{status:429});
-  const id=`upload-${account.id}-${crypto.randomUUID()}`,value:Upload={owner:account.id,name,type:type||(validation.category==='image'?'image/jpeg':'video/mp4'),size,parts:Math.ceil(size/partSize),expires:Date.now()+60*60_000,state:'open'},now=new Date();
+  const id=`upload-${account.id}-${crypto.randomUUID()}`,value:Upload={owner:account.id,name,type:type||(validation.category==='image'?'image/jpeg':'video/mp4'),size,partSize,parts:Math.ceil(size/partSize),expires:Date.now()+60*60_000,state:'open'},now=new Date();
   await db.insert(appConfigurations).values({id,value:value as unknown as Record<string,unknown>,createdAt:now,updatedAt:now});
   return Response.json({id,partSize,parts:value.parts});
  }
@@ -34,6 +34,7 @@ export async function POST(request:Request){
  if(!id.startsWith(`upload-${account.id}-`))return Response.json({error:'NOT_FOUND'},{status:404});
  const row=(await db.select().from(appConfigurations).where(eq(appConfigurations.id,id)).limit(1))[0];
  const upload=row?.value as unknown as Upload;
+ const partSize=upload?.partSize||4*1024*1024;
  if(!upload||upload.owner!==account.id||upload.expires<Date.now()||(upload.state!=='open'&&action!=='status'&&action!=='complete'))return Response.json({error:'UPLOAD_EXPIRED'},{status:409});
  if(action==='status'||action==='complete'&&upload.state==='complete'){if(upload.item)return Response.json({item:upload.item});const completed:number[]=[];for(let i=0;i<upload.parts;i++){const part=await env.MEDIA.get(`${id}/${i}`);if(part){if(part.size===Math.min(partSize,upload.size-i*partSize))completed.push(i);await part.body.cancel()}}return Response.json({completed,parts:upload.parts,partSize})}
  if(upload.state!=='open')return Response.json({error:'UPLOAD_BUSY'},{status:409});
@@ -59,7 +60,8 @@ export async function POST(request:Request){
   await env.MEDIA.put(key,stream,{httpMetadata:{contentType:upload.type}});
   const now=new Date();await db.insert(propertyMedia).values({id:mediaId,objectKey:key,ownerAccountId:account.id,fileName:upload.name,contentType:upload.type||'video/mp4',size:upload.size,status:'active',createdAt:now,updatedAt:now});
   await writeAudit(db,account,'property_media.uploaded','property_media',mediaId,'رسانه ملک به صورت تکه‌ای بارگذاری شد.',{size:upload.size,parts:upload.parts});
-  await Promise.all(Array.from({length:upload.parts},(_,i)=>env.MEDIA!.delete(`${id}/${i}`)));await db.update(appConfigurations).set({value:{...row.value,state:'complete',item:{key,url:`/api/property-media?key=${encodeURIComponent(key)}`,name:upload.name,type:upload.type||'video/mp4',size:upload.size}}}).where(eq(appConfigurations.id,id));
+  await db.update(appConfigurations).set({value:{...row.value,state:'complete',item:{key,url:`/api/property-media?key=${encodeURIComponent(key)}`,name:upload.name,type:upload.type||'video/mp4',size:upload.size}}}).where(eq(appConfigurations.id,id));
+  await Promise.allSettled(Array.from({length:upload.parts},(_,i)=>env.MEDIA!.delete(`${id}/${i}`)));
   return Response.json({item:{key,url:`/api/property-media?key=${encodeURIComponent(key)}`,name:upload.name,type:upload.type||'video/mp4',size:upload.size}},{status:201});
  }catch{
   await env.MEDIA.delete(key);await db.delete(propertyMedia).where(eq(propertyMedia.id,mediaId));

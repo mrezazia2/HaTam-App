@@ -81,7 +81,7 @@ function PropertyCard({ property, favorite, onFavorite, onOpen }) {
   );
 }
 
-function LocationFilterDialog({ open, onClose, config, filters, setFilters }) {
+export function LocationFilterDialog({ open, onClose, config, filters, setFilters }) {
   const closeRef = useRef(null);
   const [activeRegionId, setActiveRegionId] = useState("");
   useEffect(() => { if (!open) return; const handler = e => e.key === "Escape" && onClose(); document.addEventListener("keydown", handler); window.setTimeout(() => closeRef.current?.focus(), 0); return () => document.removeEventListener("keydown", handler); }, [open, onClose]);
@@ -174,8 +174,8 @@ function HomePage() {
     const sizeMatches = !filters.size || (filters.size === "under-100" ? p.size < 100 : p.size >= 100);
     const smartMatches = !smartMatchIds || smartMatchIds.includes(String(p.id));
     const locationMatches = filters.neighborhoods.length ? filters.neighborhoods.some(item => p.area.includes(item)) : (!filters.regions.length || filters.regions.some(region => sameDistrict(p.district, region)));
-    const d=p.details||{},year=propertyBuildingYear(d);const extraMatches=(!filters.beds||p.bedrooms>=Number(filters.beds))&&(!filters.minYear||year>=Number(filters.minYear))&&(!filters.maxYear||year<=Number(filters.maxYear))&&(!filters.floors||Number(d.totalFloors||d.floors)===Number(filters.floors))&&(!filters.units||Number(d.unitsPerFloor||d.units)===Number(filters.units))&&(!filters.amenities?.length||filters.amenities.every(x=>(d.amenities||[]).includes(x)));
-    return extraMatches && smartMatches && textMatches && locationMatches && (!filters.kind || p.kind === filters.kind) && budgetMatches && sizeMatches && (!filters.minPrice || p.priceValue >= Number(filters.minPrice)) && (!filters.maxPrice || p.priceValue <= Number(filters.maxPrice)) && (!filters.minSize || p.size >= Number(filters.minSize)) && (!filters.maxSize || p.size <= Number(filters.maxSize));
+    const d=p.details||{},year=propertyBuildingYear(d);const extraMatches=(!filters.beds||p.bedrooms>=Number(filters.beds))&&(!filters.minYear||year!==undefined&&year>=Number(filters.minYear))&&(!filters.maxYear||year!==undefined&&year<=Number(filters.maxYear))&&(!filters.floors||Number(d.totalFloors||d.floors)===Number(filters.floors))&&(!filters.units||Number(d.unitsPerFloor||d.units)===Number(filters.units))&&(!filters.amenities?.length||filters.amenities.every(x=>(d.amenities||[]).includes(x)));
+    return extraMatches && smartMatches && textMatches && locationMatches && (!filters.kind || p.kind === filters.kind || (filters.kind==="آپارتمان"&&p.kind==="apartment") || (filters.kind==="پنت‌هاوس"&&p.kind==="penthouse")) && budgetMatches && sizeMatches && (!filters.minPrice || p.priceValue >= Number(filters.minPrice)) && (!filters.maxPrice || p.priceValue <= Number(filters.maxPrice)) && (!filters.minSize || p.size >= Number(filters.minSize)) && (!filters.maxSize || p.size <= Number(filters.maxSize));
   }), [properties, query, filters, smartMatchIds]);
   const hasFilters = Boolean(query || Object.values(filters).some(value => Array.isArray(value) ? value.length > 0 : Boolean(value)));
   const toggleFavorite = async (id) => {

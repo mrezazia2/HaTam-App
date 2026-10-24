@@ -7,6 +7,7 @@ import { useBrand } from "../brand/BrandProvider";
 import { useTheme } from "../theme/ThemeProvider";
 import CommunicationsDock from "../communications/CommunicationsDock";
 import "./site-interactions.css";
+import {defaultSiteMenu,type SiteMenuItem} from "../api/_lib/site-menu";
 import {defaultNavigationConfig,type NavigationConfig} from "../navigation/config";
 
 type Account = { id: string; name: string; role: "admin"|"user"|"consultant"|"agency" } | null;
@@ -14,6 +15,7 @@ type Account = { id: string; name: string; role: "admin"|"user"|"consultant"|"ag
 export default function PublicSiteHeader({ overlay = false }: { overlay?: boolean }) {
   const { settings } = useBrand();
   const { theme, toggleTheme } = useTheme();
+  const [siteMenu,setSiteMenu]=useState<SiteMenuItem[]>(defaultSiteMenu);useEffect(()=>{fetch("/api/site-menu",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>d&&setSiteMenu(d.items)).catch(()=>{})},[]);
   const [account, setAccount] = useState<Account>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [navigation,setNavigation]=useState<NavigationConfig>(defaultNavigationConfig);
@@ -31,7 +33,7 @@ export default function PublicSiteHeader({ overlay = false }: { overlay?: boolea
     return () => document.removeEventListener("keydown", close);
   }, [menuOpen]);
 
-  const panelHref = account ? navigation.siteLogin[account.role as keyof NavigationConfig["siteLogin"]]||navigation.siteLogin.user : `/login/user?returnTo=${encodeURIComponent(navigation.siteLogin.user)}`;
+  const panelHref = account ? navigation.siteLogin[account.role as keyof NavigationConfig["siteLogin"]]||navigation.siteLogin.user : "/login";
   const closeMenu = () => setMenuOpen(false);
 
   return <header className={`public-site-header${overlay ? " public-site-header-overlay" : ""}`} dir="rtl">
@@ -39,11 +41,7 @@ export default function PublicSiteHeader({ overlay = false }: { overlay?: boolea
       <Link className="public-site-brand" href={navigation.siteMenu.home} onClick={closeMenu}><img src={settings.logoUrl} alt={settings.brandName} /></Link>
       <button className="public-site-menu-button" type="button" onClick={() => setMenuOpen(value => !value)} aria-expanded={menuOpen} aria-controls="public-site-navigation" aria-label={menuOpen ? "بستن منو" : "باز کردن منو"}>{menuOpen ? <Cross2Icon /> : <HamburgerMenuIcon />}</button>
       <nav id="public-site-navigation" className={menuOpen ? "open" : ""} aria-label="منوی اصلی سایت">
-        <Link href={navigation.siteMenu.home} onClick={closeMenu}><HomeIcon /> خانه</Link>
-        <Link href={navigation.siteMenu.ai} onClick={closeMenu}>جست‌وجوی هوشمند</Link>
-        <Link href={navigation.siteMenu.properties} onClick={closeMenu}>فایل‌ها</Link>
-        <Link href={navigation.siteMenu.consultants} onClick={closeMenu}>مشاوران</Link>
-        <Link href={navigation.siteMenu.blog} onClick={closeMenu}>وبلاگ</Link>
+        {siteMenu.map(item=><Link key={item.id} href={item.href} onClick={closeMenu}>{item.label}</Link>)}
       </nav>
       <div className="public-site-account-actions"><button type="button" className="icon-action" aria-label="بازگشت به صفحه قبل" onClick={()=>{if(history.length>1)history.back();else location.assign("/")}}><ArrowRightIcon/></button>
         {account && <><CommunicationsDock role={account.role} surface="site"/><Link className="icon-action optional-account-action" href={navigation.siteMenu.favorites} aria-label="علاقه‌مندی‌ها"><HeartIcon /></Link></>}

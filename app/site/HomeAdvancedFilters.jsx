@@ -3,7 +3,7 @@ import "./home-advanced-filters.css";
 
 const ascii = value => String(value).replace(/[۰-۹]/g, digit => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/\D/g, "");
 const display = (value, grouped = false) => value ? Number(value).toLocaleString("fa-IR", {useGrouping: grouped}) : "";
-const amenities = ["آسانسور", "بالکن", "حیاط", "پارکینگ", "انباری", "پارک موتور"];
+const amenities = ["آسانسور", "بالکن", "حیاط", "پارکینگ", "انباری", "پارکینگ موتور"];
 
 export default function HomeAdvancedFilters({filters, setFilter, resetFilters, onShowResults}) {
  const range = (title, from, to, year = false, grouped = false) => <fieldset className="home-filter-field"><legend>{title}</legend><div className="home-filter-range">

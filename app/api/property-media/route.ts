@@ -1,3 +1,4 @@
+import {mediaResponse} from "../_lib/media-response";
 import { env } from "cloudflare:workers";
 import { and, eq, like, ne } from "drizzle-orm";
 import { getDb } from "../../../db";
@@ -56,12 +57,7 @@ export async function GET(request: Request) {
       return new Response("Forbidden", { status: 403 });
     }
   }
-  const object = await env.MEDIA.get(key);
-  if (!object) return new Response("Not found", { status: 404 });
-  return new Response(object.body, { headers: {
-    "content-type": record.contentType, "content-length": String(record.size),
-    "cache-control": isPublic ? "public, max-age=86400" : "private, no-store", "x-content-type-options": "nosniff",
-  } });
+  return mediaResponse(request,env.MEDIA,key,record.size,record.contentType,isPublic);
 }
 
 export async function DELETE(request: Request) {

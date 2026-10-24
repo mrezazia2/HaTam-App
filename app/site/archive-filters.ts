@@ -10,5 +10,5 @@ export function matchesArchiveFilters(property:{price:number;area:number;bedroom
  &&(!filters.minYear||(year!==undefined&&year>=Number(filters.minYear)))&&(!filters.maxYear||(year!==undefined&&year<=Number(filters.maxYear)))
  &&(!Number(filters.floors)||Number(details.totalFloors||details.floors)===Number(filters.floors))
  &&(!Number(filters.units)||Number(details.unitsPerFloor||details.units)===Number(filters.units))
- &&filters.amenities.every(value=>amenities.includes(value));
+ &&filters.amenities.every(value=>amenities.includes(value)||(value==="پارکینگ موتور"&&amenities.includes("پارک موتور")));
 }

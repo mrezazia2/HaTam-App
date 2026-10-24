@@ -5,4 +5,5 @@ export function navigateApp(target:string){
  if(url.href===location.href)return;
  window.history.pushState({hatamPrevious:location.href},'',url);
  window.dispatchEvent(new PopStateEvent('popstate'));
+ if(url.searchParams.get('screen')==='detail'){window.scrollTo?.({top:0,behavior:'instant'});if(typeof document!=='undefined')document.querySelectorAll('.hatam-scroll').forEach(element=>{element.scrollTop=0})}
 }

@@ -195,8 +195,9 @@ function usePublishedProperties(filters?:PropertyFilters){
  return {properties:items,error};
 }
 
-function HomeScreen({ filters,onOpen, favorites, onFavorite, goSearch, openAiChat, openContact, openTrust, openCooperate, openConsultants, openFilter, openUrgent, dark, toggleTheme }: {
+function HomeScreen({ filters,onOpen, favorites, onFavorite, goSearch, openAiChat, openContact, openTrust, openCooperate, openConsultants, openFilter, openUrgent, onClearFilters,dark, toggleTheme }: {
   filters?:PropertyFilters;
+  onClearFilters?:()=>void;
   onOpen: (property: Property) => void;
   favorites: Array<string | number>;
   onFavorite: (id: string | number) => void;
@@ -254,7 +255,7 @@ function HomeScreen({ filters,onOpen, favorites, onFavorite, goSearch, openAiCha
         <section className="archive-section">
           <button className="archive-sort-trigger" onClick={()=>setSortOpen(!sortOpen)}><span>مرتب‌سازی بر اساس</span><strong>{sortLabels[sort]}</strong><ChevronLeftIcon/></button>
           {sortOpen&&<div className="archive-sort-panel" role="dialog" aria-label="مرتب‌سازی فایل‌ها">{(["affordable","expensive","newest","oldest"] as ArchiveSort[]).map(value=><button className={sort===value?"selected":""} key={value} onClick={()=>{setSort(value);setSortOpen(false)}}><i/>{sortLabels[value]}</button>)}</div>}
-          <div className="archive-list">
+          {filters&&onClearFilters&&<button type="button" className="app-clear-manual-filters" onClick={onClearFilters}>حذف فیلترهای انتخاب‌شده ×</button>}<div className="archive-list">
             {archive.map((property,index)=><article className="archive-property" key={property.id}>
               <button className="property-hit" onClick={()=>onOpen(property)} aria-label={`مشاهده ${property.title}`}/>
               <img src={property.image} alt={property.title}/>
@@ -325,11 +326,12 @@ function UrgentSaleScreen({onBack,onDone,entry="default"}:{onBack:()=>void;onDon
 
 function Counter({label,value,setValue}:{label:string;value:number;setValue:(value:number)=>void}){return <div className="counter-card"><span>{label}</span><div><button onClick={()=>setValue(Math.max(0,value-1))}>−</button><strong>{value.toLocaleString("fa-IR")}</strong><button onClick={()=>setValue(value+1)}>+</button></div></div>}
 
-function SearchScreen({ onOpen, favorites, onFavorite, filterOpen, setFilterOpen,openManualFilter,filters }: {
+function SearchScreen({ onOpen, favorites, onFavorite, filterOpen, setFilterOpen,openManualFilter,onClearFilters,filters }: {
   onOpen: (property: Property) => void;
   favorites: Array<string | number>;
   onFavorite: (id: string | number) => void;
   openManualFilter:()=>void;
+  onClearFilters?:()=>void;
   filters?:PropertyFilters;
   filterOpen: boolean;
   setFilterOpen: (open: boolean) => void;
@@ -382,7 +384,7 @@ function SearchScreen({ onOpen, favorites, onFavorite, filterOpen, setFilterOpen
             <KeyboardInput value={query} onChange={(e) => setQuery(e.target.value)} onFocus={() => window.setTimeout(resetDeviceScroll, 0)} onBlur={() => window.setTimeout(resetDeviceScroll, 0)} placeholder="محله، خیابان یا نوع ملک..." aria-label="جست‌وجوی ملک" />
             <button onClick={openManualFilter} aria-label="فیلترها"><MixerHorizontalIcon /></button>
           </div>
-          <div className="quick-filters">
+          {filters&&onClearFilters&&<button className="app-clear-manual-filters" onClick={onClearFilters}>حذف فیلتر دستی ×</button>}<div className="quick-filters">
             <button className={transaction==="sale"?"active":""} aria-pressed={transaction==="sale"} onClick={()=>setTransaction("sale")}>خرید</button>
             <button className={transaction==="rent"?"active":""} aria-pressed={transaction==="rent"} onClick={()=>setTransaction("rent")}>اجاره</button>
             <button className={parkingOnly?"active":""} aria-pressed={parkingOnly} onClick={()=>setParkingOnly(value=>!value)}>پارکینگ</button>
@@ -461,8 +463,8 @@ function DetailScreen({ property, favorite, onFavorite, onBack, onRequireLogin }
           <PropertySections appLayout area={area} bedrooms={beds} price={price} transactionType={detail?.transactionType||"sale"} description={detail?.description||property.description||""}/>
           <PropertyMap latitude={detail?.latitude??null} longitude={detail?.longitude??null}/>
           <section className="advisor-card">
-            <span className="advisor-avatar app-advisor-icon" aria-hidden="true"><IdCardIcon/></span>
-            <div><span>مشاور اختصاصی این فایل</span><strong>{advisor?.name||"تیم مشاوران حاتم"}</strong></div>
+            <button className="advisor-avatar app-advisor-icon" aria-label="مشاهده پروفایل مشاور" onClick={()=>{if(advisor?.id)navigateApp(`/app?screen=consultant-profile&consultantId=${encodeURIComponent(advisor.id)}`)}}><IdCardIcon/></button>
+            <button className="advisor-profile-link" onClick={()=>{if(advisor?.id)navigateApp(`/app?screen=consultant-profile&consultantId=${encodeURIComponent(advisor.id)}`)}}><span>مشاور اختصاصی این فایل</span><strong>{advisor?.name||"تیم مشاوران حاتم"}</strong></button>
             <button type="button" className="app-advisor-chat" disabled={busy} onClick={startChat}><ChatBubbleIcon/>شروع چت</button>
           </section>
           <button className="detail-consultation" onClick={()=>setRequestType("visit")}><CalendarIcon /> درخواست بازدید</button>
@@ -636,12 +638,12 @@ export default function Prototype() {
     <div className={`hatam-app ${dark?"theme-dark":"theme-light"}`}>
       {screen!=="entry"&&<AppSharedHeader screen={screen} setScreen={setScreen} onBack={goBack} dark={dark} toggleTheme={()=>setTheme(dark?"light":"dark")}/>}
       {screen === "entry" && <EntryScreen continueAsGuest={()=>setScreen("home")} openLogin={(role,mode)=>{setLoginRole(role);setLoginMode(mode);setScreen("login")}}/>}
-      {screen === "home" && <HomeScreen filters={appliedFilters} onOpen={openProperty} favorites={favorites} onFavorite={toggleFavorite} goSearch={() => setScreen("valuation")} openAiChat={()=>setScreen("ai-chat")} openContact={()=>setScreen("contact")} openTrust={()=>setScreen("trust")} openCooperate={()=>setScreen("cooperate")} openConsultants={()=>setScreen("consultants")} openFilter={(mode)=>{filterReturn.current="home";setFilterMode(mode);setScreen("filter")}} openUrgent={()=>{setUrgentEntry("default");setScreen("urgent")}} dark={dark} toggleTheme={()=>setTheme(dark?"light":"dark")} />}
+      {screen === "home" && <HomeScreen onClearFilters={()=>setAppliedFilters(undefined)} filters={appliedFilters} onOpen={openProperty} favorites={favorites} onFavorite={toggleFavorite} goSearch={() => setScreen("valuation")} openAiChat={()=>setScreen("ai-chat")} openContact={()=>setScreen("contact")} openTrust={()=>setScreen("trust")} openCooperate={()=>setScreen("cooperate")} openConsultants={()=>setScreen("consultants")} openFilter={(mode)=>{filterReturn.current="home";setFilterMode(mode);setScreen("filter")}} openUrgent={()=>{setUrgentEntry("default");setScreen("urgent")}} dark={dark} toggleTheme={()=>setTheme(dark?"light":"dark")} />}
       {screen === "filter" && <FilterScreen mode={filterMode} onBack={goBack} onApply={value=>{setAppliedFilters(value);setScreen(filterReturn.current)}}/>}
       {screen === "urgent" && <UrgentSaleScreen entry={urgentEntry} onBack={goBack} onDone={()=>setScreen("home")}/>}
       {screen === "submit-choice" && <SubmitChoiceScreen onBack={goBack} onOwner={()=>{setUrgentEntry("default");setScreen("urgent")}} onConsultant={()=>setScreen("consultant-submit")}/>}
-      {screen === "consultant-submit" && <ConsultantSubmitScreen onBack={goBack} onDone={()=>setScreen("home")} dark={dark} toggleTheme={()=>setTheme(dark?"light":"dark")}/>}
-      {screen === "search" && <SearchScreen onOpen={openProperty} favorites={favorites} onFavorite={toggleFavorite} filterOpen={filterOpen} setFilterOpen={setFilterOpen} filters={appliedFilters} openManualFilter={()=>{filterReturn.current="search";setFilterMode("manual");setScreen("filter")}} />}
+      {screen === "consultant-submit" && <ConsultantSubmitScreen onBack={goBack} onDone={()=>setScreen("profile")} dark={dark} toggleTheme={()=>setTheme(dark?"light":"dark")}/>}
+      {screen === "search" && <SearchScreen onClearFilters={()=>setAppliedFilters(undefined)} onOpen={openProperty} favorites={favorites} onFavorite={toggleFavorite} filterOpen={filterOpen} setFilterOpen={setFilterOpen} filters={appliedFilters} openManualFilter={()=>{filterReturn.current="search";setFilterMode("manual");setScreen("filter")}} />}
       {screen === "favorites" && <FavoritesScreen favorites={favorites} onOpen={openProperty} onFavorite={toggleFavorite} />}
       {screen === "profile" && <ProfileScreen />}
       {screen === "detail" && <DetailScreen property={selected} favorite={favorites.map(String).includes(String(selected.id))} onFavorite={() => {void toggleFavorite(selected.id)}} onBack={goBack} onRequireLogin={()=>{setLoginRole("user");setLoginMode("login");setScreen("login")}} />}
