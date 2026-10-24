@@ -39,4 +39,6 @@
  .site-notice-list>button{padding:14px;gap:10px}.site-manual-filter-button{padding:10px 14px}}
 @media(max-width:380px){.site-archive-search-row{gap:8px}.site-manual-filter-button{font-size:14px;padding:8px 10px}.site-notice-list .site-notice-symbol{width:32px;height:32px;flex-basis:32px}}
 
-.public-site-header nav{min-width:0;overflow-x:auto;scrollbar-width:thin}.public-site-header nav a{white-space:nowrap;flex-shrink:0}
+.public-site-header-inner{width:calc(100% - 32px);max-width:none}
+.public-site-header nav{min-width:0;overflow:visible;flex-wrap:wrap}.public-site-header nav a{white-space:nowrap;flex-shrink:0}
+@media(max-width:1180px){.public-site-header-inner{grid-template-columns:1fr auto 112px;grid-template-areas:"actions menu brand"}.public-site-menu-button{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--theme-border);border-radius:12px;background:var(--theme-surface)}.public-site-header nav{position:absolute;top:100%;right:16px;left:16px;display:none;flex-direction:column;align-items:stretch;padding:10px;max-height:75vh;overflow-y:auto;border:1px solid var(--theme-border);border-radius:15px;background:var(--theme-surface);z-index:4}.public-site-header nav.open{display:flex}}
