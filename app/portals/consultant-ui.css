@@ -63,3 +63,10 @@ body:has(.portal-page) .global-theme-toggle{display:none!important}
 .portal-page :is(.portal-module-head,.portal-toolbar,.portal-module-card,.portal-card,.portal-stats article){border-color:var(--theme-border)}
 .portal-page :is(.portal-module-card,.portal-card,.portal-stats article) :is(td,th,li,span){color:inherit}
 @media(max-width:760px){.portal-page{display:block}.portal-page .portal-header-actions{gap:6px}.portal-page .portal-primary{min-height:44px}.portal-page .portal-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.portal-page .portal-content{padding-inline:12px}}
+.hatam-app .archive-property{grid-template-columns:minmax(112px,auto) minmax(0,1fr) 76px!important;gap:7px!important;padding-inline:8px 2px!important;box-sizing:border-box;width:100%;min-width:0}
+.hatam-app .archive-property>img{width:76px!important;max-width:100%;justify-self:end;margin:0}
+.hatam-app .archive-property aside{min-width:0!important;max-width:145px;padding-left:6px;box-sizing:border-box}
+.hatam-app .archive-property aside .archive-price-number{display:block;white-space:nowrap;overflow-wrap:normal;word-break:normal;font-size:clamp(11px,3.1vw,14px);line-height:1.7;max-width:100%}
+.hatam-app .archive-property aside .archive-price-unit{display:block;font-size:12px;line-height:1.6;color:var(--theme-muted)}
+.hatam-app .archive-copy{min-width:0;overflow-wrap:anywhere}
+@media(max-width:360px){.hatam-app .archive-property{grid-template-columns:minmax(105px,auto) minmax(0,1fr) 64px!important;gap:5px!important}.hatam-app .archive-property>img{width:64px!important}.hatam-app .archive-property aside .archive-price-number{font-size:11px}}

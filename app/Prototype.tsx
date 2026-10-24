@@ -260,7 +260,7 @@ function HomeScreen({ filters,onOpen, favorites, onFavorite, goSearch, openAiCha
               <button className="property-hit" onClick={()=>onOpen(property)} aria-label={`مشاهده ${property.title}`}/>
               <img src={property.image} alt={property.title}/>
               <div className="archive-copy"><h2>{property.title}</h2><p><DrawingPinIcon/>{property.area}</p><div>{(property.amenities||[]).map(item=><span key={item}>{item}</span>)}</div></div>
-              <aside><strong>{property.price}</strong><time>{property.createdAt?new Date(property.createdAt).toLocaleDateString("fa-IR"):""}</time><button onClick={(event)=>{event.stopPropagation();onFavorite(property.id)}} aria-label="علاقه‌مندی">{favorites.includes(property.id)?<HeartFilledIcon/>:<HeartIcon/>}</button></aside>
+              <aside><strong className="archive-price-number">{property.price.replace(/\s*تومان\s*$/, "")}</strong>{property.price.includes("تومان")&&<span className="archive-price-unit">تومان</span>}<time>{property.createdAt?new Date(property.createdAt).toLocaleDateString("fa-IR"):""}</time><button onClick={(event)=>{event.stopPropagation();onFavorite(property.id)}} aria-label="علاقه‌مندی">{favorites.includes(property.id)?<HeartFilledIcon/>:<HeartIcon/>}</button></aside>
             </article>)}
             {!archive.length&&<div className="home-empty"><MagnifyingGlassIcon/><strong>{catalogError||"ملکی با این جست‌وجو پیدا نشد"}</strong></div>}
           </div>
