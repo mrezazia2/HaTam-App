@@ -64,6 +64,7 @@ export const metadata: Metadata = {
 };
 
 import SiteFooter from './site/SiteFooter';
+import CustomClientCode from './components/CustomClientCode';
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -71,7 +72,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl">
-      <body><ThemeProvider><BrandProvider>{presentationMode() && <nav aria-label="نسخه نمایشی" style={{padding:12,background:"#073126",color:"white",display:"flex",gap:16,flexWrap:"wrap",position:"relative",zIndex:10000}}><span>نسخه نمایشی · فقط مشاهده</span>{[["/","سایت"],["/app","اپ"],["/panel","مشتری"],["/consultant","مشاور"],["/agency","آژانس"],["/admin","ادمین"]].map(([href,label])=><a key={href} href={href} style={{color:"#f4dfaa"}}>{label}</a>)}</nav>}{children}<SiteFooter/>{!presentationMode() && <><PasswordFallback/><PasswordSetupPrompt/><PwaInstallPrompt/></>}</BrandProvider></ThemeProvider></body>
+      <body><ThemeProvider><BrandProvider>{presentationMode() && <nav aria-label="نسخه نمایشی" style={{padding:12,background:"#073126",color:"white",display:"flex",gap:16,flexWrap:"wrap",position:"relative",zIndex:10000}}><span>نسخه نمایشی · فقط مشاهده</span>{[["/","سایت"],["/app","اپ"],["/panel","مشتری"],["/consultant","مشاور"],["/agency","آژانس"],["/admin","ادمین"]].map(([href,label])=><a key={href} href={href} style={{color:"#f4dfaa"}}>{label}</a>)}</nav>}{children}<SiteFooter/><CustomClientCode/>{!presentationMode() && <><PasswordFallback/><PasswordSetupPrompt/><PwaInstallPrompt/></>}</BrandProvider></ThemeProvider></body>
     </html>
   );
 }

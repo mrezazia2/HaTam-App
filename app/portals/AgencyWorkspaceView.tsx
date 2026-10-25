@@ -1,4 +1,5 @@
 "use client";
+import BulkSelection,{SelectionCheckbox,useBulkSelection,bulkFetch} from "../components/BulkSelection";
 
 import { useEffect, useState } from "react";
 import { Pencil1Icon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
@@ -38,6 +39,7 @@ function initialForm(section: Section, row?: Member | Lead | Contract): Form {
 }
 
 export default function AgencyWorkspaceView({ section }: { section: Section }) {
+  const selection=useBulkSelection();
   const [data, setData] = useState<Data>(empty);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -149,6 +151,7 @@ export default function AgencyWorkspaceView({ section }: { section: Section }) {
 
     {error && <p className="portal-form-error" role="alert">{error}</p>}
     {message && <p className="portal-form-success" role="status">{message}</p>}
+    <BulkSelection ids={rows.map(x=>x.id)} selection={selection} exportRows={rows} actions={(section==="team"?["active","suspended"]:section==="leads"?["new","contacted","qualified","won","lost"]:["draft","review","cancelled"]).map(value=>({value,label:labels[value]||value}))} run={async(id,status)=>{const row=rows.find(x=>x.id===id);if(!row)throw Error();const form=initialForm(section,row);await bulkFetch("/api/agency/workspace","POST",{resource:section==="team"?"members":section,payload:{...form,status,...(section==="contracts"?{amount:Number(form.amount),signingAt:form.signingAt?new Date(form.signingAt).toISOString():null}:{} )}},"agency")}} onDone={load}/>
     <div className="portal-module-card">
       <div className="portal-module-head"><span>عنوان</span><span>جزئیات</span><span>وضعیت</span><span>عملیات</span></div>
       {rows.map(row => {
@@ -156,7 +159,7 @@ export default function AgencyWorkspaceView({ section }: { section: Section }) {
         const meta = "mobile" in row ? row.mobile : row.propertyId || "بدون فایل مرتبط";
         const detail = "request" in row ? row.request : "amount" in row ? `${Number(row.amount).toLocaleString("fa-IR")} تومان` : row.title;
         return <article key={row.id}>
-          <div><span className="portal-avatar">{String(title || "ح").slice(0, 1)}</span><span><strong>{title || "بدون نام"}</strong><small>{meta || "—"}</small></span></div>
+          <div><SelectionCheckbox id={row.id} label={title||row.id} selection={selection}/><span className="portal-avatar">{String(title || "ح").slice(0, 1)}</span><span><strong>{title || "بدون نام"}</strong><small>{meta || "—"}</small></span></div>
           <p>{detail}</p><em>{labels[row.status] || row.status}</em>
           <div className="portal-row-actions"><button aria-label={`ویرایش ${title}`} onClick={() => startEdit(row)}><Pencil1Icon />ویرایش</button><button className="danger" aria-label={`حذف ${title}`} disabled={busy} onClick={() => remove(row)}><TrashIcon />حذف</button></div>
         </article>;

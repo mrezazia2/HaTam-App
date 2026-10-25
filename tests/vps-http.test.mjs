@@ -40,8 +40,36 @@ test('VPS production HTTP: public routes, authenticated panels and blocked previ
  const {server,port}=await startProdServer({host:'127.0.0.1',port:0,outDir:resolve('dist')});
  const request=(path,options={})=>fetch(`http://127.0.0.1:${port}${path}`,{...options,redirect:'manual'});
  try{
+ const saveCode=(body,cookie=cookies.admin)=>request('/api/admin/custom-code',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify(body)});
+ const customConfig={css:'body{--qa-custom:1}',js:'window.hatamCustomQA=true;',cssEnabled:false,jsEnabled:false,target:'both'};
+ assert.equal((await request('/api/admin/custom-code')).status,403);
+ for(const role of ['user','consultant','agency'])assert.equal((await saveCode(customConfig,cookies[role])).status,403);
+ assert.equal((await saveCode({...customConfig,target:'invalid'})).status,400);
+ assert.equal((await saveCode({...customConfig,css:'x'.repeat(100001)})).status,400);
+ assert.equal((await saveCode(customConfig)).status,200);
+ const disabledCode=await request('/api/custom-code');assert.equal(disabledCode.headers.get('cache-control'),'no-store');assert.doesNotMatch(await disabledCode.text(),/hatamCustomQA|qa-custom/);
+ assert.equal((await saveCode({...customConfig,cssEnabled:true,jsEnabled:true,target:'app'})).status,200);
+ const enabledCode=await (await request('/api/custom-code')).text();assert.match(enabledCode,/hatamCustomQA/);assert.match(enabledCode,/safeMode/);assert.match(enabledCode,/login/);assert.match(enabledCode,/qa-custom/);new Function(enabledCode);
+ const savedCode=await (await request('/api/admin/custom-code',{headers:{cookie:cookies.admin}})).json();assert.equal(savedCode.config.target,'app');assert.equal(savedCode.config.jsEnabled,true);
+ assert.equal((await saveCode(customConfig)).status,200);
  for(const role of ['agency','consultant','user']){const form=new FormData();form.set('file',new Blob([Uint8Array.from([255,216,255,217])],{type:'image/jpeg'}),'role.jpg');const media=await request('/api/property-media',{method:'POST',headers:{cookie:cookies[role]},body:form});assert.equal(media.status,201,`${role} media upload`);const item=(await media.json()).item;assert.equal((await db.prepare('SELECT owner_account_id FROM property_media WHERE object_key=?').bind(item.key).first()).owner_account_id,role)}
  const workspaceMutation=(resource,action,payload,cookie=cookies.admin)=>request('/api/admin/workspace',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify({resource,action,payload})});
+ const moderate=(payload,cookie=cookies.admin)=>request('/api/admin/properties/moderate',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify(payload)});
+ for(const role of ['user','consultant','agency']){const denied=await moderate({id:'private',source:'property',status:'published'},cookies[role]);assert.equal(denied.status,403);await denied.arrayBuffer()}
+ const invalidModeration=await moderate({id:'private',source:'property',status:'anything'});assert.equal(invalidModeration.status,400);await invalidModeration.arrayBuffer();
+ const absentModeration=await moderate({id:'missing',source:'property',status:'published'});assert.equal(absentModeration.status,404);await absentModeration.arrayBuffer();
+ const directModeration=await moderate({id:'private',source:'property',status:'published'});assert.equal(directModeration.status,200);await directModeration.arrayBuffer();
+ const archiveModeration=await moderate({id:'private',source:'property',status:'pending'});assert.equal(archiveModeration.status,200);await archiveModeration.arrayBuffer();
+ const testMedia=await db.prepare("SELECT object_key FROM property_media WHERE owner_account_id='user' LIMIT 1").first();
+ const urgentCreate=await request('/api/urgent-sales',{method:'POST',headers:{cookie:cookies.user,'content-type':'application/json'},body:JSON.stringify({firstName:'Test',lastName:'Owner',mobile:'09120000001',address:'Test address for publication',area:80,buildingAge:1399,expectedPrice:5000000000,mediaKeys:[testMedia.object_key]})});assert.equal(urgentCreate.status,201,await urgentCreate.clone().text());const moderationUrgentId=(await urgentCreate.json()).id;
+ const urgentPublish=await moderate({id:moderationUrgentId,source:'urgent',status:'published'});assert.equal(urgentPublish.status,200,await urgentPublish.clone().text());const publishedId=(await urgentPublish.json()).id;
+ const repeatedPublish=await moderate({id:moderationUrgentId,source:'urgent',status:'published'});assert.equal(repeatedPublish.status,200);assert.equal((await repeatedPublish.json()).id,publishedId);
+ assert.equal((await db.prepare('SELECT COUNT(*) n FROM properties WHERE id=?').bind(publishedId).first()).n,1);
+ assert.equal((await db.prepare('SELECT property_id FROM property_media WHERE object_key=?').bind(testMedia.object_key).first()).property_id,publishedId);
+ const editConverted=await workspaceMutation('properties','save',{id:publishedId,name:'Edited published request',mobile:'09120000001',address:'Test address for publication',area:80,bedrooms:2,price:5000000000,status:'فعال',media:[{key:testMedia.object_key}]});assert.equal(editConverted.status,200,await editConverted.clone().text());await editConverted.arrayBuffer();
+ assert.equal((await request(`/api/properties/${publishedId}`)).status,200);
+ assert.equal((await moderate({id:publishedId,source:'property',status:'archived'})).status,200);
+ const hiddenPublication=await request(`/api/properties/${publishedId}`);assert.equal(hiddenPublication.status,404);await hiddenPublication.arrayBuffer();
  const forbiddenStatus=await workspaceMutation('properties','status',{id:'private',status:'فعال'},cookies.user);assert.equal(forbiddenStatus.status,403);await forbiddenStatus.arrayBuffer();
  const approve=await workspaceMutation('properties','status',{id:'private',status:'فعال'});assert.equal(approve.status,200,await approve.clone().text());await approve.arrayBuffer();assert.equal((await db.prepare("SELECT status FROM properties WHERE id='private'").first()).status,'published');
  const reject=await workspaceMutation('properties','status',{id:'private',status:'در انتظار'});assert.equal(reject.status,200);await reject.arrayBuffer();

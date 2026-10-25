@@ -1,4 +1,5 @@
 "use client";
+import BulkSelection,{SelectionCheckbox,useBulkSelection,bulkFetch} from "../components/BulkSelection";
 
 import Link from "next/link";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
@@ -15,6 +16,7 @@ type Workspace = { members: Member[]; properties: Property[] };
 const statusLabels: Record<string, string> = { draft: "پیش‌نویس", pending: "در انتظار بررسی", published: "منتشرشده", rejected: "ردشده", archived: "بایگانی" };
 
 export default function AgencyPropertiesView() {
+  const selection=useBulkSelection();
   const [data, setData] = useState<Workspace>({ members: [], properties: [] });
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
@@ -82,6 +84,7 @@ export default function AgencyPropertiesView() {
       <span>{rows.length.toLocaleString("fa-IR")} فایل نمایش داده می‌شود</span>
       <span>{members.length.toLocaleString("fa-IR")} مشاور فعال قابل تخصیص</span>
     </div>
+    <BulkSelection ids={rows.map(x=>x.id)} selection={selection} actions={[{value:"pending",label:"ارسال برای تأیید"},{value:"archived",label:"بایگانی"}]} run={async(id,status)=>{await bulkFetch(`/api/properties/${encodeURIComponent(id)}`,"PATCH",{status},"agency")}} onDone={load}/>
     {error && <p className="portal-form-error" role="alert">{error}</p>}
     {message && <p className="portal-form-success" role="status">{message}</p>}
     <div className="portal-module-card">
@@ -89,7 +92,7 @@ export default function AgencyPropertiesView() {
       {rows.map(item => {
         const assigned = item.consultantAccountId ? memberMap.get(item.consultantAccountId) : null;
         return <article key={item.id}>
-          <div>{item.coverImage ? <img src={item.coverImage} alt="" /> : <span className="portal-avatar">{item.title.slice(0, 1)}</span>}<span><strong>{item.title}</strong><small>{item.address || item.id}</small></span></div>
+          <div><SelectionCheckbox id={item.id} label={item.title} selection={selection}/>{item.coverImage ? <img src={item.coverImage} alt="" /> : <span className="portal-avatar">{item.title.slice(0, 1)}</span>}<span><strong>{item.title}</strong><small>{item.address || item.id}</small></span></div>
           <div className="agency-property-details">
             <p>{item.area.toLocaleString("fa-IR")} متر · {item.bedrooms.toLocaleString("fa-IR")} خواب · {item.price.toLocaleString("fa-IR")} تومان</p>
             <select aria-label={`مشاور مسئول ${item.title}`} disabled={busyId === item.id} value={item.consultantAccountId || ""} onChange={event => void assign(item.id, event.target.value)}>

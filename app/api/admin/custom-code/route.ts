@@ -1,0 +1,7 @@
+import {getDb} from '../../../../db';
+import {appConfigurations} from '../../../../db/schema';
+import {customCode} from '../../_lib/custom-code';
+import {requireAdmin,forbidden} from '../../_lib/authorization';
+import {writeAudit} from '../../_lib/audit';
+export async function GET(request:Request){if(!await requireAdmin(request))return forbidden();return Response.json({ok:true,config:await customCode()},{headers:{'cache-control':'no-store'}})}
+export async function POST(request:Request){const admin=await requireAdmin(request);if(!admin)return forbidden();let b;try{b=await request.json()}catch{return Response.json({error:'INVALID_REQUEST'},{status:400})}if(!b||typeof b.css!=='string'||typeof b.js!=='string'||b.css.length>100000||b.js.length>100000||!['site','app','both'].includes(b.target)||typeof b.cssEnabled!=='boolean'||typeof b.jsEnabled!=='boolean')return Response.json({error:'INVALID_CODE'},{status:400});const config={css:b.css,js:b.js,cssEnabled:b.cssEnabled,jsEnabled:b.jsEnabled,target:b.target,version:Date.now()},db=getDb(),now=new Date();await db.insert(appConfigurations).values({id:'custom-client-code',value:config,createdAt:now,updatedAt:now}).onConflictDoUpdate({target:appConfigurations.id,set:{value:config,updatedAt:now}});await writeAudit(db,admin,'custom_code.update','app_configuration','custom-client-code','کد سفارشی ویرایش شد.',{cssEnabled:config.cssEnabled,jsEnabled:config.jsEnabled,target:config.target});return Response.json({ok:true,config})}

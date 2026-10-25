@@ -1,4 +1,5 @@
 "use client";
+import BulkSelection,{SelectionCheckbox,useBulkSelection,bulkFetch} from "../components/BulkSelection";
 import { useEffect, useState } from "react";
 
 type Kind = "user" | "consultant" | "agency" | "admin";
@@ -12,6 +13,7 @@ const toLocalInput = (value?: string | number | null) => {
 };
 
 export default function WorkflowView({ type, kind }: { type: "visits" | "consultations"; kind: Kind }) {
+  const selection=useBulkSelection();
   const [items, setItems] = useState<Item[]>([]), [consultants, setConsultants] = useState<Consultant[]>([]);
   const [loading, setLoading] = useState(true), [editing, setEditing] = useState<Item | null>(null);
   const [scheduledAt, setScheduledAt] = useState(""), [status, setStatus] = useState(""), [notes, setNotes] = useState(""), [consultantId, setConsultantId] = useState("");
@@ -48,9 +50,10 @@ export default function WorkflowView({ type, kind }: { type: "visits" | "consult
   };
   return <section className="portal-module workflow-view">
     <div className="portal-toolbar"><strong>{type === "visits" ? "برنامه بازدیدها" : "برنامه مشاوره‌ها"}</strong><span>{items.length.toLocaleString("fa-IR")} مورد</span></div>
+    <BulkSelection ids={items.map(x=>x.id)} selection={selection} actions={manager?[{value:type==="visits"?"confirmed":"scheduled",label:"تأیید برنامه"},{value:"completed",label:"انجام‌شده"},{value:"cancelled",label:"لغو"}]:[{value:"cancelled",label:"لغو درخواست"}]} run={async(id,status)=>{await bulkFetch(`/api/${type}`,"PATCH",{id,status},kind)}} onDone={load}/>
     {error && !editing && <p className="portal-form-error" role="alert">{error}</p>}
     <div className="portal-module-card"><div className="portal-module-head"><span>درخواست و مشتری</span><span>زمان و مسئول</span><span>وضعیت</span><span>عملیات</span></div>{items.map(item => <article key={item.id}>
-      <div><span className="portal-avatar">{type === "visits" ? "ب" : "م"}</span><span><strong>{item.propertyTitle || item.subject || "درخواست جدید"}</strong><small>{item.customerName || "کاربر"} · {item.id}</small></span></div>
+      <div><SelectionCheckbox id={item.id} label={item.propertyTitle||item.subject||item.id} selection={selection}/><span className="portal-avatar">{type === "visits" ? "ب" : "م"}</span><span><strong>{item.propertyTitle || item.subject || "درخواست جدید"}</strong><small>{item.customerName || "کاربر"} · {item.id}</small></span></div>
       <p>{item.scheduledAt ? new Date(item.scheduledAt).toLocaleString("fa-IR") : "در انتظار زمان‌بندی"}<small>{item.consultantName ? ` · ${item.consultantName}` : " · بدون مشاور"}</small></p>
       <em>{statusLabels[item.status] || item.status}</em>
       <div>{manager ? <button onClick={() => open(item)}>مدیریت</button> : !["cancelled", "completed"].includes(item.status) ? <button onClick={() => cancel(item)}>لغو درخواست</button> : <span>—</span>}</div>

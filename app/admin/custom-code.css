@@ -1,0 +1,10 @@
+.custom-code-settings{margin-top:24px;padding:20px;border:1px solid var(--border-color,#a3b5aa);border-radius:16px;background:var(--surface,#082d23);color:var(--text-primary,#eef5ef);display:grid;gap:16px;min-width:0}
+.custom-code-settings h2,.custom-code-settings p{margin:0;line-height:1.9}
+.custom-code-settings label{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:16px;margin-bottom:10px}
+.custom-code-settings select{min-height:44px;max-width:100%;font-size:16px;padding:8px;border:1px solid #82978c;border-radius:8px}
+.custom-code-settings input[type=checkbox]{width:20px;height:20px;accent-color:#b78b2b}
+.custom-code-settings textarea{border:1px solid #82978c;border-radius:10px;resize:vertical;text-align:left;line-height:1.6}
+.custom-code-settings button{justify-self:start;min-height:44px;padding:10px 20px;border:0;border-radius:10px;background:#ba8b2b;color:#fff;font:inherit;cursor:pointer}
+html[data-theme=light] .custom-code-settings{background:#fff;color:#173b30}
+html[data-theme=dark] .custom-code-settings :is(select,textarea){background:#08271f;color:#eef5ef}
+@media(max-width:600px){.custom-code-settings{padding:14px}.custom-code-settings button{width:100%}}
