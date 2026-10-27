@@ -3,12 +3,12 @@ import BulkSelection,{SelectionCheckbox,useBulkSelection,bulkFetch} from "../com
 import { useEffect, useState } from "react";
 
 type Kind = "user" | "consultant" | "agency";
-type Contract = { id: string; customerName: string; amount: number; status: string; propertyTitle?: string | null; signingAt?: string | number | null; notes?: string };
+type Contract = { createdAt?:string|number; id: string; customerName: string; amount: number; status: string; propertyTitle?: string | null; signingAt?: string | number | null; notes?: string };
 type Document = { id: string; name: string; url: string; size: number };
 const labels: Record<string, string> = { draft: "پیش‌نویس", review: "در بررسی", signing: "در حال امضا", completed: "تکمیل‌شده", cancelled: "لغوشده" };
 
 export default function ContractsView({ kind }: { kind: Kind }) {
-  const selection=useBulkSelection();
+  const archive=useArchiveFilter();const selection=useBulkSelection();
   const [items, setItems] = useState<Contract[]>([]);
   const [documents, setDocuments] = useState<Record<string, Document[]>>({});
   const [open, setOpen] = useState("");
@@ -57,11 +57,11 @@ export default function ContractsView({ kind }: { kind: Kind }) {
 
   return <section className="portal-module contract-list-view">
     <div className="portal-toolbar"><strong>قراردادهای من</strong><span>{items.length.toLocaleString("fa-IR")} قرارداد</span></div>
-    <BulkSelection ids={items.map(x=>x.id)} selection={selection} actions={[]} run={async()=>{}} exportRows={items}/>
+    <ArchiveFilters filter={archive} items={items}/><BulkSelection ids={items.filter(archive.matches).map(x=>x.id)} selection={selection} actions={[]} run={async()=>{}} exportRows={items}/>
     {error && <p className="portal-form-error">{error}</p>}
     <div className="portal-module-card">
       <div className="portal-module-head"><span>قرارداد</span><span>زمان امضا</span><span>وضعیت</span><span>عملیات</span></div>
-      {items.map(item => <article className={open === item.id ? "contract-row-open" : ""} key={item.id}>
+      {items.filter(archive.matches).map(item => <article className={open === item.id ? "contract-row-open" : ""} key={item.id}>
         <div><SelectionCheckbox id={item.id} label={item.propertyTitle||item.customerName} selection={selection}/><span className="portal-avatar">ق</span><span><strong>{item.propertyTitle || item.customerName}</strong><small>{item.id} · {Number(item.amount).toLocaleString("fa-IR")} تومان</small></span></div>
         <p>{item.signingAt ? new Date(item.signingAt).toLocaleString("fa-IR") : "هنوز تعیین نشده"}</p>
         <em>{labels[item.status] || item.status}</em>
@@ -74,7 +74,8 @@ export default function ContractsView({ kind }: { kind: Kind }) {
         </div>}
       </article>)}
       {loading && <div className="portal-empty">در حال دریافت قراردادها…</div>}
-      {!loading && !items.length && <div className="portal-empty">قراردادی برای این حساب ثبت نشده است.</div>}
+      {!loading && !items.filter(archive.matches).length && <div className="portal-empty">قراردادی برای این حساب ثبت نشده است.</div>}
     </div>
   </section>;
 }
+import ArchiveFilters,{useArchiveFilter} from "../components/ArchiveFilters";

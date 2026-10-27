@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 import { Pencil1Icon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
 
 type Section = "team" | "leads" | "contracts";
-type Member = { id: string; accountId: string; name: string | null; mobile: string | null; title: string; status: "invited" | "active" | "suspended" };
-type Lead = { id: string; name: string; mobile: string; request: string; consultantAccountId: string | null; status: "new" | "contacted" | "qualified" | "won" | "lost" };
-type Contract = { id: string; customerName: string; customerMobile: string; amount: number; propertyId: string | null; consultantAccountId: string | null; signingAt: string | number | null; notes: string; status: "draft" | "review" | "signing" | "completed" | "cancelled" };
+type Member = { createdAt?:string|number; id: string; accountId: string; name: string | null; mobile: string | null; title: string; status: "invited" | "active" | "suspended" };
+type Lead = { createdAt?:string|number; id: string; name: string; mobile: string; request: string; consultantAccountId: string | null; status: "new" | "contacted" | "qualified" | "won" | "lost" };
+type Contract = { createdAt?:string|number; id: string; customerName: string; customerMobile: string; amount: number; propertyId: string | null; consultantAccountId: string | null; signingAt: string | number | null; notes: string; status: "draft" | "review" | "signing" | "completed" | "cancelled" };
 type Property = { id: string; title: string };
 type Data = { members: Member[]; leads: Lead[]; contracts: Contract[]; properties: Property[] };
 type Form = Record<string, string>;
@@ -39,7 +39,7 @@ function initialForm(section: Section, row?: Member | Lead | Contract): Form {
 }
 
 export default function AgencyWorkspaceView({ section }: { section: Section }) {
-  const selection=useBulkSelection();
+  const archive=useArchiveFilter();const selection=useBulkSelection();
   const [data, setData] = useState<Data>(empty);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -94,7 +94,7 @@ export default function AgencyWorkspaceView({ section }: { section: Section }) {
   };
 
   const remove = async (row: Member | Lead | Contract) => {
-    const name = "name" in row ? row.name : "customerName" in row ? row.customerName : row.title;
+    const name = "name" in row ? row.name : row.customerName;
     if (!window.confirm(`رکورد «${name || row.id}» حذف شود؟`)) return;
     setBusy(true);
     setError("");
@@ -113,7 +113,8 @@ export default function AgencyWorkspaceView({ section }: { section: Section }) {
     }
   };
 
-  const rows: Array<Member | Lead | Contract> = section === "team" ? data.members : section === "leads" ? data.leads : data.contracts;
+  const allRows: Array<Member | Lead | Contract> = section === "team" ? data.members : section === "leads" ? data.leads : data.contracts;
+  const rows=allRows.filter(archive.matches);
   const consultantOptions = data.members.filter(item => item.status !== "suspended");
 
   return <section className="portal-module agency-live">
@@ -151,11 +152,11 @@ export default function AgencyWorkspaceView({ section }: { section: Section }) {
 
     {error && <p className="portal-form-error" role="alert">{error}</p>}
     {message && <p className="portal-form-success" role="status">{message}</p>}
-    <BulkSelection ids={rows.map(x=>x.id)} selection={selection} exportRows={rows} actions={(section==="team"?["active","suspended"]:section==="leads"?["new","contacted","qualified","won","lost"]:["draft","review","cancelled"]).map(value=>({value,label:labels[value]||value}))} run={async(id,status)=>{const row=rows.find(x=>x.id===id);if(!row)throw Error();const form=initialForm(section,row);await bulkFetch("/api/agency/workspace","POST",{resource:section==="team"?"members":section,payload:{...form,status,...(section==="contracts"?{amount:Number(form.amount),signingAt:form.signingAt?new Date(form.signingAt).toISOString():null}:{} )}},"agency")}} onDone={load}/>
+    <ArchiveFilters filter={archive} items={allRows}/><BulkSelection ids={rows.map(x=>x.id)} selection={selection} exportRows={rows} actions={(section==="team"?["active","suspended"]:section==="leads"?["new","contacted","qualified","won","lost"]:["draft","review","cancelled"]).map(value=>({value,label:labels[value]||value}))} run={async(id,status)=>{const row=rows.find(x=>x.id===id);if(!row)throw Error();const form=initialForm(section,row);await bulkFetch("/api/agency/workspace","POST",{resource:section==="team"?"members":section,payload:{...form,status,...(section==="contracts"?{amount:Number(form.amount),signingAt:form.signingAt?new Date(form.signingAt).toISOString():null}:{} )}},"agency")}} onDone={load}/>
     <div className="portal-module-card">
       <div className="portal-module-head"><span>عنوان</span><span>جزئیات</span><span>وضعیت</span><span>عملیات</span></div>
       {rows.map(row => {
-        const title = "name" in row ? row.name : "customerName" in row ? row.customerName : row.title;
+        const title = "name" in row ? row.name : row.customerName;
         const meta = "mobile" in row ? row.mobile : row.propertyId || "بدون فایل مرتبط";
         const detail = "request" in row ? row.request : "amount" in row ? `${Number(row.amount).toLocaleString("fa-IR")} تومان` : row.title;
         return <article key={row.id}>
@@ -183,3 +184,4 @@ function ContractDocuments({ contractId }: { contractId: string }) {
   const remove = async (item: ContractDocument) => { setBusy(true); setError(""); try { const response = await fetch(`/api/contract-documents?key=${encodeURIComponent(item.key)}`, { method: "DELETE", headers: { "x-hatam-preview-role": "agency" } }); if (!response.ok) throw new Error(); await load(); } catch { setError("حذف مدرک انجام نشد."); } finally { setBusy(false); } };
   return <section className="agency-field-wide contract-documents"><header><div><strong>مدارک قرارداد</strong><small>PDF یا تصویر؛ حداکثر ۲۵ مگابایت</small></div><label className="contract-upload"><input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple disabled={busy} onChange={event => { void upload(event.target.files); event.target.value = ""; }} />{busy ? "در حال پردازش…" : "افزودن مدرک"}</label></header>{items.map(item => <article key={item.id}><a href={item.url} target="_blank" rel="noreferrer">{item.name}</a><span>{Math.max(1, Math.round(item.size / 1024)).toLocaleString("fa-IR")} کیلوبایت</span><button disabled={busy} onClick={() => remove(item)}>حذف</button></article>)}{!items.length && <p>هنوز مدرکی به این قرارداد پیوست نشده است.</p>}{error && <p className="portal-form-error">{error}</p>}</section>;
 }
+import ArchiveFilters,{useArchiveFilter} from "../components/ArchiveFilters";

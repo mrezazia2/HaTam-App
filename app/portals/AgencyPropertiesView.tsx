@@ -8,7 +8,7 @@ import PropertyManagerModal from "./PropertyManagerModal";
 
 type Member = { accountId: string; name: string | null; mobile: string | null; title: string; status: string };
 type Property = {
-  id: string; title: string; address: string; area: number; bedrooms: number; price: number;
+  createdAt?:string|number;id: string; title: string; address: string; area: number; bedrooms: number; price: number;
   status: string; coverImage: string | null; consultantAccountId: string | null;
 };
 type Workspace = { members: Member[]; properties: Property[] };
@@ -16,7 +16,7 @@ type Workspace = { members: Member[]; properties: Property[] };
 const statusLabels: Record<string, string> = { draft: "پیش‌نویس", pending: "در انتظار بررسی", published: "منتشرشده", rejected: "ردشده", archived: "بایگانی" };
 
 export default function AgencyPropertiesView() {
-  const selection=useBulkSelection();
+  const archive=useArchiveFilter();const selection=useBulkSelection();
   const [data, setData] = useState<Workspace>({ members: [], properties: [] });
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
@@ -44,10 +44,10 @@ export default function AgencyPropertiesView() {
   useEffect(() => { void load(); }, []);
   const members = data.members.filter(item => item.status === "active");
   const memberMap = new Map(data.members.map(item => [item.accountId, item]));
-  const rows = useMemo(() => data.properties.filter(item => {
+  const rows = useMemo(() => data.properties.filter(archive.matches).filter(item => {
     const matchesQuery = `${item.title} ${item.address} ${item.id}`.toLowerCase().includes(query.trim().toLowerCase());
     return matchesQuery && (status === "all" || item.status === status);
-  }), [data.properties, query, status]);
+  }), [data.properties, query, status,archive.value]);
 
   const assign = async (propertyId: string, consultantAccountId: string) => {
     setBusyId(propertyId);
@@ -84,7 +84,7 @@ export default function AgencyPropertiesView() {
       <span>{rows.length.toLocaleString("fa-IR")} فایل نمایش داده می‌شود</span>
       <span>{members.length.toLocaleString("fa-IR")} مشاور فعال قابل تخصیص</span>
     </div>
-    <BulkSelection ids={rows.map(x=>x.id)} selection={selection} actions={[{value:"pending",label:"ارسال برای تأیید"},{value:"archived",label:"بایگانی"}]} run={async(id,status)=>{await bulkFetch(`/api/properties/${encodeURIComponent(id)}`,"PATCH",{status},"agency")}} onDone={load}/>
+    <ArchiveFilters filter={archive} items={data.properties}/><BulkSelection ids={rows.map(x=>x.id)} selection={selection} actions={[{value:"pending",label:"ارسال برای تأیید"},{value:"archived",label:"بایگانی"}]} run={async(id,status)=>{await bulkFetch(`/api/properties/${encodeURIComponent(id)}`,"PATCH",{status},"agency")}} onDone={load}/>
     {error && <p className="portal-form-error" role="alert">{error}</p>}
     {message && <p className="portal-form-success" role="status">{message}</p>}
     <div className="portal-module-card">
@@ -112,3 +112,4 @@ export default function AgencyPropertiesView() {
     {manageId && <PropertyManagerModal role="agency" propertyId={manageId} onClose={() => setManageId("")} onSaved={() => { setMessage("تغییرات ملک ذخیره و برای بررسی ارسال شد."); void load(); }} />}
   </section>;
 }
+import ArchiveFilters,{useArchiveFilter} from "../components/ArchiveFilters";

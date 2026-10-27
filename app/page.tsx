@@ -1,5 +1,6 @@
 import { HomeExperience } from "./Experience";
+import MobileHomeRedirect from './navigation/MobileHomeRedirect';
 
 export default function PublicHome() {
-  return <HomeExperience />;
+  return <><MobileHomeRedirect/><HomeExperience /></>;
 }

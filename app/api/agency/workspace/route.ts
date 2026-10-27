@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const db = getDb();
   const [memberRows, branchRows, leadRows, contractRows, propertyRows] = await Promise.all([
     db.select({
-      id: agencyMembers.id, accountId: agencyMembers.accountId, name: accounts.name,
+      createdAt:agencyMembers.createdAt,id: agencyMembers.id, accountId: agencyMembers.accountId, name: accounts.name,
       mobile: accounts.mobile, title: agencyMembers.title, status: agencyMembers.status,
     }).from(agencyMembers).leftJoin(accounts, eq(agencyMembers.accountId, accounts.id)).where(eq(agencyMembers.agencyId, account.agencyId)),
     db.select().from(agencyBranches).where(eq(agencyBranches.agencyId, account.agencyId)).orderBy(desc(agencyBranches.updatedAt)),

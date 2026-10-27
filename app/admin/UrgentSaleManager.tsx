@@ -8,7 +8,7 @@ import { deleteUrgentSale, fetchUrgentSalesData, updateUrgentSale, type UrgentSa
 type Consultant = { id: string; name: string; mobile: string };
 
 export default function UrgentSaleManager({ notify,onChanged }: { notify: (message: string) => void;onChanged?:()=>void }) {
-  const selection=useBulkSelection();
+  const archive=useArchiveFilter();const selection=useBulkSelection();
   const [items, setItems] = useState<UrgentSaleRequest[]>([]);
   const [consultants, setConsultants] = useState<Consultant[]>([]);
   const [query, setQuery] = useState("");
@@ -33,10 +33,10 @@ export default function UrgentSaleManager({ notify,onChanged }: { notify: (messa
     try { await deleteUrgentSale(id); setItems(current => current.filter(item => item.id !== id)); notify("درخواست حذف شد."); onChanged?.(); }
     catch { notify("حذف درخواست انجام نشد."); }
   };
-  const rows = useMemo(() => items.filter(item => `${item.firstName} ${item.lastName} ${item.mobile || ""} ${item.address} ${item.id}`.includes(query.trim())), [items, query]);
+  const rows = useMemo(() => items.filter(archive.matches).filter(item => `${item.firstName} ${item.lastName} ${item.mobile || ""} ${item.address} ${item.id}`.includes(query.trim())), [items, query,archive.value]);
   return <section className="urgent-admin">
     <div className="entity-toolbar"><label><MagnifyingGlassIcon /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="جست‌وجو با نام، موبایل، آدرس یا شناسه درخواست..." /></label><span>{rows.length.toLocaleString("fa-IR")} درخواست</span><button onClick={load} aria-label="به‌روزرسانی درخواست‌ها"><ReloadIcon /></button></div>
-    <BulkSelection ids={rows.map(x=>x.id)} selection={selection} actions={[{value:"published",label:"تأیید و انتشار آگهی"},{value:"reviewing",label:"شروع بررسی"},{value:"rejected",label:"رد درخواست"},{value:"completed",label:"تکمیل پیگیری"}]} run={async(id,status)=>{if(status==="published")await bulkFetch("/api/admin/properties/moderate","POST",{id,source:"urgent",status});else await bulkFetch("/api/urgent-sales","PATCH",{id,status})}} onDone={()=>{load();onChanged?.()}}/>
+    <ArchiveFilters filter={archive} items={items}/><BulkSelection ids={rows.map(x=>x.id)} selection={selection} actions={[{value:"published",label:"تأیید و انتشار آگهی"},{value:"reviewing",label:"شروع بررسی"},{value:"rejected",label:"رد درخواست"},{value:"completed",label:"تکمیل پیگیری"}]} run={async(id,status)=>{if(status==="published")await bulkFetch("/api/admin/properties/moderate","POST",{id,source:"urgent",status});else await bulkFetch("/api/urgent-sales","PATCH",{id,status})}} onDone={()=>{load();onChanged?.()}}/>
     {error && <p className="urgent-admin-error" role="alert">{error}</p>}
     <div className="urgent-admin-list">{rows.map(item => <article key={item.id}>
       <header><div><SelectionCheckbox id={item.id} label={`${item.firstName} ${item.lastName}`} selection={selection}/><b><PersonIcon /></b><span><strong>{item.firstName} {item.lastName}</strong><small>{item.id} · {new Date(item.createdAt).toLocaleString("fa-IR")} · {item.mobile || "بدون موبایل"}</small></span></div><select value={item.status} onChange={event => update(item.id, { status: event.target.value as UrgentSaleStatus })}>{["جدید", "در بررسی", "ارجاع‌شده", "تکمیل‌شده", "ردشده"].map(status => <option key={status}>{status}</option>)}</select></header>
@@ -46,3 +46,4 @@ export default function UrgentSaleManager({ notify,onChanged }: { notify: (messa
     </article>)}{loading && <div className="entity-empty">در حال دریافت درخواست‌ها از پایگاه داده…</div>}{!loading && !error && !rows.length && <div className="entity-empty">هنوز درخواست فروش فوری ثبت نشده است.</div>}</div>
   </section>;
 }
+import ArchiveFilters,{useArchiveFilter} from "../components/ArchiveFilters";
