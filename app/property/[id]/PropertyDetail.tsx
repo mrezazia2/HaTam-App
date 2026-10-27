@@ -6,6 +6,7 @@ import SiteAdvisor from "../SiteAdvisor";
 import SiteSimilarProperties from "../SiteSimilarProperties";
 import PropertyActions from "./PropertyActions";
 import {PropertyMap,PropertySections} from "../PropertySections";
+import '../single-app-layout.css';
 type PropertyData={id:string;title:string;address:string;area:number;bedrooms:number;price:number;description:string;coverImage:string|null;transactionType:string;latitude:number|null;longitude:number|null;media:{key:string;url:string;name:string;type:string}[]};
 export default function PropertyDetail({property}:{property:PropertyData}){
  const [notice,setNotice]=useState(''),[activeMedia,setActiveMedia]=useState(0),[note,setNote]=useState('');

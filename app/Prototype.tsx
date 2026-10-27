@@ -304,7 +304,7 @@ function FilterScreen({mode,onBack,onApply,featured=false}:{mode:FilterMode;onBa
   </main></MobileScroll>
 }
 
-function UrgentSaleScreen({onBack,onDone,entry="default"}:{onBack:()=>void;onDone:()=>void;entry?:"default"|"trust"|"cooperate"}){
+export function UrgentSaleScreen({onBack,onDone,entry="default"}:{onBack:()=>void;onDone:()=>void;entry?:"default"|"trust"|"cooperate"}){
   const config=readFilterConfig(),mapEnabled=useMapEnabled();
   const [form,setForm]=useState({firstName:"",lastName:"",mobile:"",address:"",area:"",bedrooms:2,buildingAge:"",floor:1,unitsPerFloor:1,expectedPrice:""});
   const [amenities,setAmenities]=useState<string[]>(["پارکینگ"]),[media,setMedia]=useState<PropertyMedia[]>([]),[canUpload,setCanUpload]=useState(false),[latitude,setLatitude]=useState<number|null>(null),[longitude,setLongitude]=useState<number|null>(null),[errors,setErrors]=useState<Record<string,string>>({}),[success,setSuccess]=useState(false),[submitting,setSubmitting]=useState(false);

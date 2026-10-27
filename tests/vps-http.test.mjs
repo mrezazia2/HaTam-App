@@ -40,6 +40,25 @@ test('VPS production HTTP: public routes, authenticated panels and blocked previ
  const {server,port}=await startProdServer({host:'127.0.0.1',port:0,outDir:resolve('dist')});
  const request=(path,options={})=>fetch(`http://127.0.0.1:${port}${path}`,{...options,redirect:'manual'});
  try{
+ for(const role of ['consultant','agency']){
+  const favorite=await request('/api/favorites',{method:'POST',headers:{cookie:cookies[role],'content-type':'application/json'},body:JSON.stringify({propertyId:'public'})});assert.equal(favorite.status,201);await favorite.arrayBuffer();
+  const ownFavorites=await (await request('/api/favorites',{headers:{cookie:cookies[role]}})).json();assert.equal(ownFavorites.items.length,1);
+  const ownRequest=await request('/api/property-requests',{method:'POST',headers:{cookie:cookies[role],'content-type':'application/json'},body:JSON.stringify({requestType:'buy',title:'Role request test',description:'Private request regression'})});assert.equal(ownRequest.status,201);await ownRequest.arrayBuffer();
+  const ownRequests=await (await request('/api/property-requests',{headers:{cookie:cookies[role]}})).json();assert.equal(ownRequests.items.length,1);
+ }
+ const implicitReview=await request('/api/properties/consultant-property',{method:'PATCH',headers:{cookie:cookies.consultant,'content-type':'application/json'},body:JSON.stringify({title:'Edited consultant file'})});assert.equal(implicitReview.status,200);assert.equal((await implicitReview.json()).status,'pending');
+ await db.prepare("UPDATE properties SET status='published' WHERE id='consultant-property'").run();
+ assert.equal((await request('/api/admin/archive-badges')).status,403);
+ const badgesBefore=await (await request('/api/admin/archive-badges',{headers:{cookie:cookies.admin}})).json();assert.ok(badgesBefore.counts.properties>0);assert.ok(badgesBefore.counts.customers>0);
+ const markArchive=(section,through,cookie=cookies.admin)=>request('/api/admin/archive-badges',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify({section,through})});
+ assert.equal((await markArchive('properties',badgesBefore.snapshot,cookies.user)).status,403);
+ assert.equal((await markArchive('invalid',badgesBefore.snapshot)).status,400);
+ assert.equal((await markArchive('properties',badgesBefore.snapshot)).status,200);
+ const badgesAfter=await (await request('/api/admin/archive-badges',{headers:{cookie:cookies.admin}})).json();assert.equal(badgesAfter.counts.properties,0);assert.equal(badgesAfter.counts.customers,badgesBefore.counts.customers);
+ assert.equal((await db.prepare("SELECT status FROM properties WHERE id='private'").first()).status,'pending');
+ await db.prepare("INSERT INTO properties(id,title,owner_mobile,address,transaction_type,property_type,area,bedrooms,price,status,created_at,updated_at) VALUES ('badge-new','New arrival','09120000001','Test address','sale','apartment',80,2,1,'pending',?,?)").bind(Date.now()+1,Date.now()+1).run();
+ const badgesNew=await (await request('/api/admin/archive-badges',{headers:{cookie:cookies.admin}})).json();assert.equal(badgesNew.counts.properties,1);
+ await db.prepare("DELETE FROM properties WHERE id='badge-new'").run();
  const saveCode=(body,cookie=cookies.admin)=>request('/api/admin/custom-code',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify(body)});
  const customConfig={css:'body{--qa-custom:1}',js:'window.hatamCustomQA=true;',cssEnabled:false,jsEnabled:false,target:'both'};
  assert.equal((await request('/api/admin/custom-code')).status,403);

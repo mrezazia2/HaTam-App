@@ -60,7 +60,7 @@ export default function PropertyManagerModal({ role, propertyId, onClose, onSave
         transactionType: property.transactionType, propertyType: property.propertyType,
         area: String(property.area), bedrooms: String(property.bedrooms), price: String(property.price),
         description: editableDescription(property.description),
-        status: ["published", "rejected"].includes(property.status) ? "pending" : property.status,
+        status: ["published", "vip", "rejected"].includes(property.status) ? "pending" : property.status,
       });
     }).catch(() => setError("دریافت اطلاعات کامل ملک انجام نشد.")).finally(() => setLoading(false));
   }, [propertyId, role]);

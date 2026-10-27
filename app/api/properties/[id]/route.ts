@@ -55,7 +55,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!canManageProperty(account, row)) return Response.json({ ok: false, error: "FORBIDDEN" }, { status: 403 });
 
   const value = await request.json() as Record<string, unknown>;
-  const requested = String(value.status ?? row.status);
+  const requested = String(value.status ?? (account.role!=='admin'&&['published','vip','rejected'].includes(row.status)?'pending':row.status));
   const allowedStatuses = account.role === "admin" ? ["draft", "pending", "published", "vip", "rejected", "archived"] : ["draft", "pending", "archived"];
   if (!allowedStatuses.includes(requested)) return Response.json({ ok: false, error: "INVALID_STATUS" }, { status: 400 });
   const title = value.title === undefined ? row.title : String(value.title).trim();

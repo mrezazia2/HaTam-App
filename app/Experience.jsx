@@ -45,10 +45,10 @@ const demoProperties = [
 ];
 
 const quickActions = [
-  { Icon: PersonIcon, title: "مشاور اختصاصی", text: "از ابتدا تا انجام معامله همراه شما" },
-  { Icon: CalendarIcon, title: "درخواست بازدید", text: "انتخاب زمان دلخواه" },
-  { Icon: BackpackIcon, title: "ارزش واقعی ملک", text: "تخمین قیمت با هوش مصنوعی" },
-  { Icon: Crosshair2Icon, title: "بازدید سه‌بعدی", text: "تور ۳۶۰ درجه" },
+  { Icon: HomeIcon, title: "خرید سریع", text: "ثبت درخواست خرید ملک" },
+  { Icon: BackpackIcon, title: "قیمت‌گذاری", text: "بررسی قیمت توسط کارشناسان" },
+  { Icon: BookmarkIcon, title: "فایل‌های ویژه", text: "املاک منتخب حاتم" },
+  { Icon: RocketIcon, title: "فروش فوری", text: "ثبت مشخصات و رسانه‌های ملک" },
 ];
 
 const latinDigits = (value = "") => String(value).replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
@@ -148,6 +148,7 @@ function HomePage() {
       .then((response) => response.ok ? response.json() : Promise.reject())
       .then((data) => setProperties((data.items || []).map((property) => ({
         ...property,
+        details: (()=>{try{const details=JSON.parse(property.description||'{}');return details&&typeof details==='object'&&!Array.isArray(details)?details:{}}catch{return {}}})(),
         badge: property.featured ? "ویژه" : property.transactionType === "rent" ? "اجاره" : property.transactionType === "presale" ? "پیش‌فروش" : "فروش",
         image: property.coverImage || "/assets/hatam/luxury-living.webp",
         meta: `${Number(property.area).toLocaleString("fa-IR", { useGrouping: false })} متر / ${Number(property.bedrooms).toLocaleString("fa-IR", { useGrouping: false })} خواب`,
@@ -165,7 +166,7 @@ function HomePage() {
     loadProperties(); fetchFilterConfig().then(setFilterConfig);
     fetch("/api/auth/session", { cache: "no-store" }).then((response) => response.json()).then((data) => {
       setAccount(data.account || null);
-      if (data.account?.role === "user") fetch("/api/favorites", { cache: "no-store" }).then((response) => response.ok ? response.json() : Promise.reject()).then((result) => setFavorites((result.items || []).map((item) => item.property.id))).catch(() => {});
+      if (data.account) fetch("/api/favorites", { cache: "no-store" }).then((response) => response.ok ? response.json() : Promise.reject()).then((result) => setFavorites((result.items || []).map((item) => item.property.id))).catch(() => {});
     }).catch(() => setAccount(null));
   }, []);
   const filtered = useMemo(() => properties.filter((p) => {
@@ -179,7 +180,7 @@ function HomePage() {
   }), [properties, query, filters, smartMatchIds]);
   const hasFilters = Boolean(query || Object.values(filters).some(value => Array.isArray(value) ? value.length > 0 : Boolean(value)));
   const toggleFavorite = async (id) => {
-    if (!account || account.role !== "user") return go(`/login/user?returnTo=${encodeURIComponent("/")}`);
+    if (!account) return go(`/login/user?returnTo=${encodeURIComponent("/")}`);
     const removing = favorites.includes(id);
     setFavorites((current) => removing ? current.filter((item) => item !== id) : [...current, id]);
     const response = await fetch(removing ? `/api/favorites?propertyId=${encodeURIComponent(id)}` : "/api/favorites", removing ? { method: "DELETE" } : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ propertyId: id }) });
@@ -205,10 +206,10 @@ function HomePage() {
     }
   };
   const runQuickAction = (title) => {
-    if (title === "مشاور اختصاصی") return go("/consultants");
-    if (title === "ارزش واقعی ملک") return go("/valuation");
-    if (title === "بازدید سه‌بعدی") return go("/virtual-tour");
-    return go("/visits/new");
+    if (title === "خرید سریع") return go("/quick-buy");
+    if (title === "قیمت‌گذاری") return go("/valuation");
+    if (title === "فایل‌های ویژه") return go("/properties/featured");
+    return go("/urgent-sale");
   };
 
   return <main className="home-page" dir="rtl">
