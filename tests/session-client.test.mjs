@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {hasAccountSession} from '../app/auth/session-client.ts';
+test('session preflight differentiates guest, authenticated account and server failure',async()=>{const original=globalThis.fetch;try{let url;globalThis.fetch=async(input,options)=>{url=input;assert.equal(options.cache,'no-store');return Response.json({account:null})};assert.equal(await hasAccountSession(),false);assert.equal(url,'/api/auth/session');globalThis.fetch=async()=>Response.json({account:{id:'test',role:'consultant'}});assert.equal(await hasAccountSession(),true);globalThis.fetch=async()=>new Response('',{status:503});await assert.rejects(hasAccountSession(),/SESSION_CHECK_FAILED/)}finally{globalThis.fetch=original}});

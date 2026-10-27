@@ -17,7 +17,7 @@ if(action==='build'){
   const child=spawn(process.execPath,['node_modules/vinext/dist/cli.js','build',...process.argv.slice(3)],{stdio:'inherit',env:process.env});
   for(const signal of ['SIGTERM','SIGINT'])process.on(signal,()=>child.kill(signal));
   child.on('error',()=>{process.exitCode=1;});
-  child.on('exit',code=>{process.exitCode=code??1;});
+  child.on('exit',async code=>{process.exitCode=code??1;if(code===0){try{const {verifyRscAssets}=await import('./verify-rsc-assets.mjs');console.log(`RSC assets verified; removed ${verifyRscAssets()} CSS-only JS references`);}catch(error){console.error(error);process.exitCode=1;}}});
 } else if(action==='start') {
   const args=process.argv.slice(3),option=(name,fallback)=>{const index=args.indexOf(name);return index>=0&&args[index+1]?args[index+1]:fallback;};
   const host=option('--hostname','0.0.0.0'),port=Number(option('--port','3000'));

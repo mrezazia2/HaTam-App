@@ -40,6 +40,10 @@ test('VPS production HTTP: public routes, authenticated panels and blocked previ
  const {server,port}=await startProdServer({host:'127.0.0.1',port:0,outDir:resolve('dist')});
  const request=(path,options={})=>fetch(`http://127.0.0.1:${port}${path}`,{...options,redirect:'manual'});
  try{
+ const optionalContent=await request('/api/content/quick-buy?optional=1');assert.equal(optionalContent.status,200);assert.equal((await optionalContent.json()).page,null);
+ const requiredContent=await request('/api/content/quick-buy');assert.equal(requiredContent.status,404);await requiredContent.arrayBuffer();
+ const assetUrls=new Set();for(const path of ['/','/quick-buy','/requests','/favorites','/app']){const page=await request(path);assert.equal(page.status,200);const html=await page.text();for(const match of html.matchAll(/(?:src|href)="(\/_next\/static\/[^"<>]+)"/g))assetUrls.add(match[1]);}
+ for(const asset of assetUrls){const response=await request(asset);assert.equal(response.status,200,`HTML references missing asset: ${asset}`);await response.arrayBuffer();}
  for(const role of ['consultant','agency']){
   const favorite=await request('/api/favorites',{method:'POST',headers:{cookie:cookies[role],'content-type':'application/json'},body:JSON.stringify({propertyId:'public'})});assert.equal(favorite.status,201);await favorite.arrayBuffer();
   const ownFavorites=await (await request('/api/favorites',{headers:{cookie:cookies[role]}})).json();assert.equal(ownFavorites.items.length,1);

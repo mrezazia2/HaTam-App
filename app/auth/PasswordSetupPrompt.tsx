@@ -3,6 +3,7 @@
 import {useCallback,useEffect,useState} from "react";
 import {CheckCircledIcon,LockClosedIcon,PersonIcon} from "@radix-ui/react-icons";
 import {enrollPasskey,passkeyMessage,passkeySupported} from "./passkeys-client";
+import {hasAccountSession} from './session-client';
 
 type Onboarding={role:"user"|"consultant"|"agency"|"admin";username:string;firstName:string;lastName:string;agencyName:string;profileComplete:boolean;passwordComplete:boolean};
 
@@ -10,7 +11,7 @@ export default function PasswordSetupPrompt(){
   const [data,setData]=useState<Onboarding|null>(null),[step,setStep]=useState<"profile"|"password"|"passkey">("profile");
   const [firstName,setFirstName]=useState(""),[lastName,setLastName]=useState(""),[agencyName,setAgencyName]=useState("");
   const [password,setPassword]=useState(""),[confirm,setConfirm]=useState(""),[message,setMessage]=useState(""),[passkeyFailed,setPasskeyFailed]=useState(false),[busy,setBusy]=useState(false);
-  const load=useCallback(async()=>{try{const response=await fetch("/api/auth/onboarding",{cache:"no-store"});if(!response.ok)return;const result=await response.json() as Onboarding&{ok:boolean};if(result.role==="admin"||result.profileComplete&&result.passwordComplete)return;setData(result);setFirstName(result.firstName||"");setLastName(result.lastName||"");setAgencyName(result.agencyName||"");setStep(result.profileComplete?"password":"profile")}catch{}},[]);
+  const load=useCallback(async()=>{try{if(!await hasAccountSession()){setData(null);return}const response=await fetch("/api/auth/onboarding",{cache:"no-store"});if(!response.ok)return;const result=await response.json() as Onboarding&{ok:boolean};if(result.role==="admin"||result.profileComplete&&result.passwordComplete){setData(null);return}setData(result);setFirstName(result.firstName||"");setLastName(result.lastName||"");setAgencyName(result.agencyName||"");setStep(result.profileComplete?"password":"profile")}catch{}},[]);
   useEffect(()=>{void load();const handler=()=>void load();window.addEventListener("hatam-authenticated",handler);return()=>window.removeEventListener("hatam-authenticated",handler)},[load]);
   if(!data)return null;
   const saveProfile=async()=>{setMessage("");setBusy(true);try{const response=await fetch("/api/auth/onboarding",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({firstName,lastName,agencyName})});if(!response.ok)throw new Error();setData(current=>current?{...current,profileComplete:true,firstName,lastName,agencyName}:current);setStep("password")}catch{setMessage("نام و نام خانوادگی را کامل وارد کنید.")}finally{setBusy(false)}};
